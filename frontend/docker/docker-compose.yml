@@ -1,0 +1,33 @@
+version: "3.8"
+
+services:
+  frontend:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile
+      target: production
+    container_name: pose-frontend
+    restart: unless-stopped
+    ports:
+      - "3100:3100"
+    environment:
+      - NODE_ENV=production
+      - NEXT_PUBLIC_API_URL=${NEXT_PUBLIC_API_URL:-http://localhost:3000/api/v1}  # Client-side API URL
+      - API_URL=${API_URL:-http://gateway-api:3000/api/v1}  # Server-side API URL (internal service name)
+      - PORT=3100
+      # NextAuth Configuration
+      - NEXTAUTH_SECRET=${NEXTAUTH_SECRET:-fKwpUMTYNf8bJZ8hJqDwy6KeXfJgkBce9H9gm48VzvU=}
+      - NEXTAUTH_URL=${NEXTAUTH_URL:-http://localhost:3100}  # Frontend URL
+    networks:
+      - pose-network
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:3100"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+networks:
+  pose-network:
+    external: true
+

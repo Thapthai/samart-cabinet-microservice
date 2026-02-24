@@ -1,0 +1,20 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+resources:
+  - namespace.yaml
+  - configmap.yaml
+  - secrets.yaml
+  - redis-pv.yaml
+  - redis-deployment.yaml
+  - auth-deployment.yaml
+  - item-deployment.yaml
+  - category-deployment.yaml
+  - email-deployment.yaml
+  - gateway-deployment.yaml
+  - medical-supplies-deployment.yaml
+  - report-service-deployment.yaml
+  - department-deployment.yaml
+  - services.yaml
+  - ingress.yaml
+

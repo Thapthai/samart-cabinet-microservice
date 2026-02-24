@@ -1,0 +1,61 @@
+'use client';
+
+import React, { ReactNode, useState, useEffect } from 'react';
+import Sidebar from './Sidebar';
+import Navbar from './Navbar';
+
+interface AppLayoutProps {
+  children: ReactNode;
+  /** ใช้ความกว้างเต็ม (ไม่มี max-width) เหมาะกับ Dashboard */
+  fullWidth?: boolean;
+}
+
+export default function AppLayout({ children, fullWidth }: AppLayoutProps) {
+  const [isCollapsed, setIsCollapsed] = useState(false);
+  const [zoomLevel, setZoomLevel] = useState<number>(100);
+
+  // Sync zoom level with CSS variable (set by Navbar)
+  useEffect(() => {
+    // Read initial value from CSS variable
+    const currentZoom = parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--admin-zoom') || '1') * 100;
+    setZoomLevel(currentZoom);
+
+    // Listen for changes to CSS variable
+    const checkZoom = () => {
+      const newZoom = parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--admin-zoom') || '1') * 100;
+      if (Math.abs(newZoom - zoomLevel) > 0.1) {
+        setZoomLevel(newZoom);
+      }
+    };
+
+    const interval = setInterval(checkZoom, 100);
+    return () => clearInterval(interval);
+  }, [zoomLevel]);
+
+  return (
+    <div className="flex h-screen bg-gray-50">
+      <Sidebar isCollapsed={isCollapsed} setIsCollapsed={setIsCollapsed} />
+      
+      {/* Main Content - ขยายตามขนาด Sidebar */}
+      <div 
+        className={`flex-1 flex flex-col transition-all duration-300 ${
+          isCollapsed ? 'lg:ml-16' : 'lg:ml-64'
+        }`}
+      >
+        <Navbar />
+        
+        <main className="flex-1 overflow-y-auto" style={{ zoom: zoomLevel / 100 }}>
+          <div
+            className={
+              fullWidth
+                ? 'w-full max-w-full px-4 sm:px-6 lg:px-8 py-6'
+                : 'container mx-auto px-4 sm:px-6 lg:px-8 py-6 max-w-7xl'
+            }
+          >
+            {children}
+          </div>
+        </main>
+      </div>
+    </div>
+  );
+}
