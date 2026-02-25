@@ -1,13 +1,17 @@
 // This is your Prisma schema file,
 // learn more about it in the docs: https://pris.ly/d/prisma-schema
 
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
 generator client {
-  provider = "prisma-client-js"
+  provider     = "prisma-client"
+  output       = "../generated/prisma"
+  moduleFormat = "cjs"
 }
 
 datasource db {
   provider = "mysql"
-  url      = env("DATABASE_URL")
 }
 
 model User {
@@ -435,7 +439,7 @@ model SupplyItemReturnRecord {
   id Int @id @default(autoincrement())
 
   itemCode String @map("item_code")
-  stock_id Int? @map("stock_id") // optional: รายการเก่าอาจไม่มี; ใช้ร่วมกับ cabinet.stock_id เมื่อมี
+  stock_id Int?   @map("stock_id") // optional: รายการเก่าอาจไม่มี; ใช้ร่วมกับ cabinet.stock_id เมื่อมี
 
   // Return Details
   qty_returned      Int      @map("qty_returned") // จำนวนที่คืนในครั้งนี้
@@ -606,34 +610,35 @@ model Department {
 }
 
 model cabinet {
-  id                 Int                 @id @default(autoincrement())
-  cabinet_name       String?             @map("cabinet_name") @db.VarChar(255)
-  cabinet_code       String?             @map("cabinet_code") @db.VarChar(255)
-  cabinet_type       String?             @map("cabinet_type") @db.VarChar(255)
-  cabinet_status     String?             @default("ACTIVE") @map("cabinet_status") @db.VarChar(255)
-  stock_id           Int?                @unique() @map("stock_id")
-  created_at         DateTime            @default(now()) @map("created_at")
-  updated_at         DateTime            @updatedAt @map("updated_at")
+  id             Int      @id @default(autoincrement())
+  cabinet_name   String?  @map("cabinet_name") @db.VarChar(255)
+  cabinet_code   String?  @map("cabinet_code") @db.VarChar(255)
+  cabinet_type   String?  @map("cabinet_type") @db.VarChar(255)
+  cabinet_status String?  @default("ACTIVE") @map("cabinet_status") @db.VarChar(255)
+  stock_id       Int?     @unique() @map("stock_id")
+  created_at     DateTime @default(now()) @map("created_at")
+  updated_at     DateTime @updatedAt @map("updated_at")
 
-  cabinetDepartments    cabinetDepartment[]
-  itemStocks            ItemStock[]
+  cabinetDepartments      cabinetDepartment[]
+  itemStocks              ItemStock[]
   supplyItemReturnRecords SupplyItemReturnRecord[]
-  cabinetItemSettings   CabinetItemSetting[]
+  cabinetItemSettings     CabinetItemSetting[]
 
   @@map("app_microservice_cabinets")
 }
 
 // Min/Max ต่อตู้ — override ของ item.stock_min/stock_max เมื่อมีแถวสำหรับ (cabinet_id, item_code)
 model CabinetItemSetting {
-  id          Int      @id @default(autoincrement())
-  cabinet_id  Int      @map("cabinet_id")
-  item_code   String   @map("item_code") @db.VarChar(25)
-  stock_min   Int?     @map("stock_min")
-  stock_max   Int?     @map("stock_max")
-  created_at  DateTime @default(now()) @map("created_at")
-  updated_at  DateTime @updatedAt @map("updated_at")
+  id         Int      @id @default(autoincrement())
+  cabinet_id Int      @map("cabinet_id")
+  item_code  String   @map("item_code") @db.VarChar(25)
+  stock_min  Int?     @map("stock_min")
+  stock_max  Int?     @map("stock_max")
+  created_at DateTime @default(now()) @map("created_at")
+  updated_at DateTime @updatedAt @map("updated_at")
 
   cabinet cabinet @relation(fields: [cabinet_id], references: [id], onDelete: Cascade)
+
   @@unique([cabinet_id, item_code])
   @@index([cabinet_id])
   @@index([item_code])

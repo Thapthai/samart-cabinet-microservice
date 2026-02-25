@@ -1,0 +1,101 @@
+import { Body, Controller, Delete, Get, Param, ParseIntPipe, Post, Put, Query } from '@nestjs/common';
+import { DepartmentService } from './department.service';
+import {
+  CreateCabinetDepartmentDto,
+  UpdateCabinetDepartmentDto,
+} from './dto/department.dto';
+import { CreateCabinetDto, UpdateCabinetDto } from './dto/cabinet.dto';
+
+@Controller('departments')
+export class DepartmentController {
+  constructor(private readonly departmentService: DepartmentService) {}
+
+  @Get()
+  getAllDepartments(
+    @Query('page') page?: string,
+    @Query('limit') limit?: string,
+    @Query('keyword') keyword?: string,
+  ) {
+    const params = {
+      page: page ? parseInt(page, 10) : undefined,
+      limit: limit ? parseInt(limit, 10) : undefined,
+      keyword,
+    };
+    return this.departmentService.getAllDepartments(params);
+  }
+}
+
+@Controller('cabinets')
+export class CabinetController {
+  constructor(private readonly departmentService: DepartmentService) {}
+
+  @Post()
+  create(@Body() dto: CreateCabinetDto) {
+    return this.departmentService.createCabinet(dto);
+  }
+
+  @Get()
+  getAll(
+    @Query('page') page?: string,
+    @Query('limit') limit?: string,
+    @Query('keyword') keyword?: string,
+  ) {
+    const query = {
+      page: page ? parseInt(page, 10) : undefined,
+      limit: limit ? parseInt(limit, 10) : undefined,
+      keyword,
+    };
+    return this.departmentService.getAllCabinets(query);
+  }
+
+  @Get(':id')
+  getById(@Param('id', ParseIntPipe) id: number) {
+    return this.departmentService.getCabinetById(id);
+  }
+
+  @Put(':id')
+  update(@Param('id', ParseIntPipe) id: number, @Body() dto: UpdateCabinetDto) {
+    return this.departmentService.updateCabinet(id, dto);
+  }
+
+  @Delete(':id')
+  delete(@Param('id', ParseIntPipe) id: number) {
+    return this.departmentService.deleteCabinet(id);
+  }
+}
+
+@Controller('cabinet-departments')
+export class CabinetDepartmentController {
+  constructor(private readonly departmentService: DepartmentService) {}
+
+  @Post()
+  create(@Body() dto: CreateCabinetDepartmentDto) {
+    return this.departmentService.createCabinetDepartment(dto);
+  }
+
+  @Get()
+  getAll(
+    @Query('cabinet_id') cabinet_id?: string,
+    @Query('department_id') department_id?: string,
+    @Query('status') status?: string,
+    @Query('keyword') keyword?: string,
+  ) {
+    const query = {
+      cabinet_id: cabinet_id ? parseInt(cabinet_id, 10) : undefined,
+      department_id: department_id ? parseInt(department_id, 10) : undefined,
+      status,
+      keyword,
+    };
+    return this.departmentService.getCabinetDepartments(query);
+  }
+
+  @Put(':id')
+  update(@Param('id', ParseIntPipe) id: number, @Body() dto: UpdateCabinetDepartmentDto) {
+    return this.departmentService.updateCabinetDepartment(id, dto);
+  }
+
+  @Delete(':id')
+  delete(@Param('id', ParseIntPipe) id: number) {
+    return this.departmentService.deleteCabinetDepartment(id);
+  }
+}
