@@ -1,63 +1,71 @@
+# ================================
+# Backend (NestJS Monolith) - Kubernetes Deployment & Service
+# ================================
+# Namespace: pose-microservices (ใช้ร่วมกับ Frontend ได้)
+# ก่อน deploy: build image แล้ว import เข้า K3s
+#   docker build -f docker/Dockerfile -t backend-smart-cabinet:latest .
+#   docker save backend-smart-cabinet:latest | sudo k3s ctr images import -
+#   kubectl apply -f k8s/backend-deployment.yaml
+#
+# ตัวแปรสภาพแวดล้อม (DATABASE_URL, JWT_*) ควรใช้ Secret หรือ ConfigMap แทน value ตายตัว
+
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: frontend
+  name: backend
   namespace: pose-microservices
   labels:
-    app: frontend
-    tier: presentation
+    app: backend
+    tier: api
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app: frontend
+      app: backend
   template:
     metadata:
       labels:
-        app: frontend
-        tier: presentation
+        app: backend
+        tier: api
     spec:
       containers:
-        - name: frontend
-          image: frontend-pose:latest
-          imagePullPolicy: Never  # ใช้ local image
+        - name: backend
+          image: backend-smart-cabinet:latest
+          imagePullPolicy: Never  # ใช้ local image หลัง import
           ports:
-            - containerPort: 3100
+            - containerPort: 3000
               name: http
           env:
             - name: NODE_ENV
               value: "production"
-            - name: NEXT_PUBLIC_API_URL
-              value: "https://phc.dyndns.biz/medical-supplies-api/v1/"  # Gateway API URL (via Apache proxy)
-            # Build ธรรมดา (ไม่ใช้ basePath) - Apache จะ strip prefix ออก
-            - name: NEXT_PUBLIC_BASE_PATH
-              value: "/medical-supplies"
             - name: PORT
-              value: "3100"
-            # NextAuth Configuration
-            - name: NEXTAUTH_SECRET
-              value: "fKwpUMTYNf8bJZ8hJqDwy6KeXfJgkBce9H9gm48VzvU="
-            - name: NEXTAUTH_URL
-              value: "https://phc.dyndns.biz/medical-supplies/"  # Frontend public URL with NodePort
+              value: "3000"
+            # แก้ค่าให้ตรงกับสภาพแวดล้อม หรือใช้ Secret (ดู backend/k8s/README.md)
+            - name: DATABASE_URL
+              value: "mysql://user:password@mysql-host:3306/database_name"
+            - name: JWT_SECRET
+              value: "your-jwt-secret"
+            - name: JWT_REFRESH_SECRET
+              value: "your-jwt-refresh-secret"
           resources:
             requests:
-              memory: "64Mi"   # ลดจาก 128Mi (ใช้จริง 43-46MB)
-              cpu: "100m"       # ลดจาก 100m
+              memory: "256Mi"
+              cpu: "100m"
             limits:
-              memory: "128Mi"  # ลดจาก 512Mi (ใช้จริง 43-46MB + buffer)
-              cpu: "400m"      # ลดจาก 500m
+              memory: "512Mi"
+              cpu: "500m"
           livenessProbe:
             httpGet:
-              path: /medical-supplies
-              port: 3100
+              path: /smart-cabinet-cu/api/v1/health
+              port: 3000
             initialDelaySeconds: 30
             periodSeconds: 10
             timeoutSeconds: 5
             failureThreshold: 3
           readinessProbe:
             httpGet:
-              path: /medical-supplies
-              port: 3100
+              path: /smart-cabinet-cu/api/v1/health
+              port: 3000
             initialDelaySeconds: 10
             periodSeconds: 5
             timeoutSeconds: 3
@@ -67,19 +75,18 @@ spec:
 apiVersion: v1
 kind: Service
 metadata:
-  name: frontend-service
+  name: backend-service
   namespace: pose-microservices
   labels:
-    app: frontend
+    app: backend
 spec:
   type: LoadBalancer
   selector:
-    app: frontend
+    app: backend
   ports:
     - name: http
       protocol: TCP
       port: 80
-      targetPort: 3100
-      nodePort: 30100  # NodePort must be in range 30000-32767 (container uses port 3100)
-  sessionAffinity: ClientIP
-
+      targetPort: 3000
+      nodePort: 30080  # NodePort สำหรับเข้า API โดยตรง (ช่วง 30000-32767)
+  sessionAffinity: None

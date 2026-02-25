@@ -1,5 +1,5 @@
 # ================================
-# Multi-stage Dockerfile for Next.js Frontend
+# Multi-stage Dockerfile for NestJS Backend (Smart Cabinet CU - Monolith)
 # ================================
 
 # --------------------------------
@@ -8,47 +8,26 @@
 FROM node:20-alpine AS deps
 LABEL stage=deps
 
-# Install dependencies only when needed
-RUN apk add --no-cache libc6-compat
-
 WORKDIR /app
 
-# Copy package files
 COPY package*.json ./
-
-# Install ALL dependencies (including dev) for build stage
-RUN if [ -f package-lock.json ]; then \
-    npm ci; \
-    else \
-    npm install; \
-    fi && \
-    npm cache clean --force
+RUN if [ -f package-lock.json ]; then npm ci; else npm install; fi && npm cache clean --force
 
 # --------------------------------
-# Stage 2: Builder
+# Stage 2: Builder (Prisma generate + Nest build)
 # --------------------------------
 FROM node:20-alpine AS builder
 LABEL stage=builder
 
 WORKDIR /app
 
-# Copy dependencies from deps stage
 COPY --from=deps /app/node_modules ./node_modules
-
-# Copy source code
 COPY . .
 
-# Set build-time environment variables
-ENV NEXT_TELEMETRY_DISABLED=1
-ENV NODE_ENV=production
+# Generate Prisma client (output: generated/prisma)
+RUN npx prisma generate
 
-# Accept build args for Next.js public environment variables (with defaults)
-ARG NEXT_PUBLIC_API_URL=https://phc.dyndns.biz/medical-supplies-api/v1/
-ARG NEXT_PUBLIC_BASE_PATH=/medical-supplies
-ENV NEXT_PUBLIC_API_URL=${NEXT_PUBLIC_API_URL}
-ENV NEXT_PUBLIC_BASE_PATH=${NEXT_PUBLIC_BASE_PATH}
-
-# Build Next.js application
+# Build NestJS (output: dist/)
 RUN npm run build
 
 # --------------------------------
@@ -59,43 +38,28 @@ LABEL stage=production
 
 WORKDIR /app
 
-# Create non-root user for security
+# Create non-root user
 RUN addgroup --system --gid 1001 nodejs && \
-    adduser --system --uid 1001 nextjs
+    adduser --system --uid 1001 nestjs
 
-# Set environment variables
 ENV NODE_ENV=production
-ENV NEXT_TELEMETRY_DISABLED=1
-ENV PORT=3100
+ENV PORT=3000
 
-# Accept build args for Next.js public environment variables (for runtime reference, with defaults)
-ARG NEXT_PUBLIC_API_URL=https://phc.dyndns.biz/medical-supplies-api/v1/
-ARG NEXT_PUBLIC_BASE_PATH=/medical-supplies
-ENV NEXT_PUBLIC_API_URL=${NEXT_PUBLIC_API_URL}
-ENV NEXT_PUBLIC_BASE_PATH=${NEXT_PUBLIC_BASE_PATH}
+# Copy package files and install production deps only
+COPY package*.json ./
+RUN npm ci --omit=dev && npm cache clean --force
 
+# Copy built app and Prisma artifacts
+COPY --from=builder --chown=nestjs:nodejs /app/dist ./dist
+COPY --from=builder --chown=nestjs:nodejs /app/generated ./generated
+COPY --from=builder --chown=nestjs:nodejs /app/prisma ./prisma
 
+USER nestjs
 
-# Copy necessary files from builder
-COPY --from=builder /app/next.config.js ./
-COPY --from=builder /app/next.config.ts ./
-COPY --from=builder /app/public ./public
-COPY --from=builder /app/package.json ./package.json
+EXPOSE 3000
 
-# Copy built application
-COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
-COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
-
-# Switch to non-root user
-USER nextjs
-
-# Expose port
-EXPOSE 3100
-
-# Health check - Check basePath root (without trailing slash)
+# Health check - API health endpoint
 HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
-    CMD node -e "require('http').get('http://localhost:3100/medical-supplies', (r) => {process.exit(r.statusCode === 200 ? 0 : 1)})"
+    CMD wget --quiet --tries=1 --spider http://localhost:3000/smart-cabinet-cu/api/v1/health || exit 1
 
-# Start application
-CMD ["node", "server.js"]
-
+CMD ["node", "dist/main.js"]

@@ -14,6 +14,7 @@ Backend ของแอป **Smart Cabinet CU** สร้างด้วย Nest
 - [ตัวแปรสภาพแวดล้อม](#ตัวแปรสภาพแวดล้อม)
 - [Database & Prisma](#database--prisma)
 - [สคริปต์](#สคริปต์)
+- [Docker & K8s](#docker--k8s)
 
 ---
 
@@ -180,6 +181,15 @@ JWT_REFRESH_EXPIRES_IN=7d
 | `npm run test:cov` | Test coverage |
 | `npm run lint` | ESLint |
 | `npm run format` | Prettier |
+
+---
+
+## Docker & K8s
+
+- **Docker:** โฟลเดอร์ [docker/](docker/) — Dockerfile (NestJS multi-stage), docker-compose สำหรับ production และ development  
+  รัน: `docker compose -f docker/docker-compose.yml up -d --build` (จากโฟลเดอร์ backend)
+- **Kubernetes:** โฟลเดอร์ [k8s/](k8s/) — Deployment + Service สำหรับ Backend (port 3000, NodePort 30080), สคริปต์ `update-service.sh` สำหรับ build แล้ว rollout restart  
+  รายละเอียด: [docker/README.md](docker/README.md), [k8s/README.md](k8s/README.md)
 
 ---
 
