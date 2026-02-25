@@ -1,98 +1,196 @@
-<p align="center">
-  <a href="http://nestjs.com/" target="blank"><img src="https://nestjs.com/img/logo-small.svg" width="120" alt="Nest Logo" /></a>
-</p>
+# Smart Cabinet CU App — Backend
 
-[circleci-image]: https://img.shields.io/circleci/build/github/nestjs/nest/master?token=abc123def456
-[circleci-url]: https://circleci.com/gh/nestjs/nest
+Backend ของแอป **Smart Cabinet CU** สร้างด้วย NestJS 11 + Prisma (MySQL) ให้ API สำหรับจัดการตู้ Cabinet, เวชภัณฑ์, การเบิก–คืน และรายงาน
 
-  <p align="center">A progressive <a href="http://nodejs.org" target="_blank">Node.js</a> framework for building efficient and scalable server-side applications.</p>
-    <p align="center">
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/v/@nestjs/core.svg" alt="NPM Version" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/l/@nestjs/core.svg" alt="Package License" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/dm/@nestjs/common.svg" alt="NPM Downloads" /></a>
-<a href="https://circleci.com/gh/nestjs/nest" target="_blank"><img src="https://img.shields.io/circleci/build/github/nestjs/nest/master" alt="CircleCI" /></a>
-<a href="https://discord.gg/G7Qnnhy" target="_blank"><img src="https://img.shields.io/badge/discord-online-brightgreen.svg" alt="Discord"/></a>
-<a href="https://opencollective.com/nest#backer" target="_blank"><img src="https://opencollective.com/nest/backers/badge.svg" alt="Backers on Open Collective" /></a>
-<a href="https://opencollective.com/nest#sponsor" target="_blank"><img src="https://opencollective.com/nest/sponsors/badge.svg" alt="Sponsors on Open Collective" /></a>
-  <a href="https://paypal.me/kamilmysliwiec" target="_blank"><img src="https://img.shields.io/badge/Donate-PayPal-ff3f59.svg" alt="Donate us"/></a>
-    <a href="https://opencollective.com/nest#sponsor"  target="_blank"><img src="https://img.shields.io/badge/Support%20us-Open%20Collective-41B883.svg" alt="Support us"></a>
-  <a href="https://twitter.com/nestframework" target="_blank"><img src="https://img.shields.io/twitter/follow/nestframework.svg?style=social&label=Follow" alt="Follow us on Twitter"></a>
-</p>
-  <!--[![Backers on Open Collective](https://opencollective.com/nest/backers/badge.svg)](https://opencollective.com/nest#backer)
-  [![Sponsors on Open Collective](https://opencollective.com/nest/sponsors/badge.svg)](https://opencollective.com/nest#sponsor)-->
+---
 
-## Description
+## สารบัญ
 
-[Nest](https://github.com/nestjs/nest) framework TypeScript starter repository.
+- [ภาพรวม](#ภาพรวม)
+- [โมดูลหลัก](#โมดูลหลัก)
+- [โครงสร้าง](#โครงสร้าง)
+- [การติดตั้งและรัน](#การติดตั้งและรัน)
+- [API Base Path](#api-base-path)
+- [ตัวแปรสภาพแวดล้อม](#ตัวแปรสภาพแวดล้อม)
+- [Database & Prisma](#database--prisma)
+- [สคริปต์](#สคริปต์)
 
-## Project setup
+---
 
-```bash
-$ npm install
+## ภาพรวม
+
+- **Framework:** NestJS 11 (TypeScript)
+- **ORM:** Prisma
+- **Database:** MySQL
+- **API prefix:** `/smart-cabinet-cu/api/v1`
+- **Port:** 3000 (หรือตาม `PORT` ใน `.env`)
+
+รองรับ Authentication (JWT, Firebase, Client Credential, 2FA), การจัดการแผนก/ตู้ Cabinet, รายการอุปกรณ์, เวชภัณฑ์ (เบิก/คืน/ใช้กับคนไข้), และรายงาน PDF/Excel
+
+---
+
+## โมดูลหลัก
+
+| โมดูล | Path | คำอธิบาย |
+|--------|------|----------|
+| **Auth** | `src/auth/` | ล็อกอิน (JWT, Firebase, Client Credential), 2FA, Staff User/Role/Permission, API Key, Refresh Token |
+| **Category** | `src/category/` | หมวดหมู่ (CRUD, tree, slug, children) |
+| **Department** | `src/department/` | แผนก และ Cabinet (CRUD) |
+| **Item** | `src/item/` | รายการอุปกรณ์, สต๊อกในตู้, min/max, อัปโหลด |
+| **Medical Supplies** | `src/medical-supplies/` | เวชภัณฑ์, เบิกจากตู้, คืนเข้าตู้, คืนอุปกรณ์, บันทึกใช้กับคนไข้, ยกเลิก Bill ฯลฯ |
+| **Report** | `src/report/` | รายงาน PDF/Excel (comparison, equipment usage/disbursement, cabinet stock, return, return-to-cabinet, vending mapping, cancel bill, dispensed items ฯลฯ) |
+| **Email** | `src/email/` | ส่งอีเมล (Nodemailer) |
+| **Prisma** | `src/prisma/` | Prisma module (DB connection) |
+| **Utils** | `src/utils/` | Date-time และ helper อื่นๆ |
+
+---
+
+## โครงสร้าง
+
+```
+backend/
+├── src/
+│   ├── app.module.ts
+│   ├── app.controller.ts
+│   ├── app.service.ts
+│   ├── main.ts
+│   ├── auth/
+│   ├── category/
+│   ├── department/
+│   ├── item/
+│   ├── medical-supplies/
+│   ├── report/           # report-service.service, report.controller, services/*.ts
+│   ├── email/
+│   ├── prisma/
+│   └── utils/
+├── prisma/
+│   └── schema.prisma
+├── docker/               # Docker / docker-compose (ตามที่โปรเจกต์ใช้)
+├── k8s/                  # K8s manifests
+├── package.json
+├── tsconfig.json
+└── .env.example
 ```
 
-## Compile and run the project
+---
+
+## การติดตั้งและรัน
+
+### ข้อกำหนด
+
+- Node.js 20+
+- MySQL
+
+### ขั้นตอน
 
 ```bash
-# development
-$ npm run start
+# ติดตั้ง dependencies
+npm install
 
-# watch mode
-$ npm run start:dev
+# ตั้งค่า environment
+cp .env.example .env
+# แก้ไข .env (DATABASE_URL, JWT_SECRET ฯลฯ)
 
-# production mode
-$ npm run start:prod
+# Generate Prisma client
+npx prisma generate
+
+# รัน migration
+npx prisma migrate dev
+
+# รัน Backend
+npm run start:dev
 ```
 
-## Run tests
+- **URL หลัก:** http://localhost:3000 (หรือตาม `PORT`)
+- **Health:** http://localhost:3000/smart-cabinet-cu/api/v1/health
+
+---
+
+## API Base Path
+
+ทุก route อยู่ภายใต้:
+
+```
+/smart-cabinet-cu/api/v1
+```
+
+ตัวอย่าง:
+
+- `GET  /smart-cabinet-cu/api/v1/health`
+- `POST /smart-cabinet-cu/api/v1/auth/login`
+- `GET  /smart-cabinet-cu/api/v1/category`
+- `GET  /smart-cabinet-cu/api/v1/department`
+- `GET  /smart-cabinet-cu/api/v1/item`
+- `POST /smart-cabinet-cu/api/v1/medical-supplies/...`
+- `POST /smart-cabinet-cu/api/v1/reports/...`
+
+รายละเอียด endpoint ดูจาก controller ใน `src/`.
+
+---
+
+## ตัวแปรสภาพแวดล้อม
+
+ดูจาก `.env.example` โดยประมาณ:
 
 ```bash
-# unit tests
-$ npm run test
+# Database
+DATABASE_URL="mysql://user:password@host:port/database_name"
+DATABASE_USER=root
+DATABASE_PASSWORD=password
+DATABASE_NAME=database_name
+DATABASE_HOST=localhost
+DATABASE_PORT=3306
 
-# e2e tests
-$ npm run test:e2e
+# Server
+NODE_ENV=development
+PORT=3000
 
-# test coverage
-$ npm run test:cov
+# JWT
+JWT_SECRET=your-secret
+JWT_REFRESH_SECRET=your-refresh-secret
+JWT_EXPIRES_IN=1d
+JWT_REFRESH_EXPIRES_IN=7d
 ```
 
-## Deployment
+ถ้ามี Firebase, SMTP ฯลฯ ให้เพิ่มใน `.env` ตามที่ใช้ในโปรเจกต์
 
-When you're ready to deploy your NestJS application to production, there are some key steps you can take to ensure it runs as efficiently as possible. Check out the [deployment documentation](https://docs.nestjs.com/deployment) for more information.
+---
 
-If you are looking for a cloud-based platform to deploy your NestJS application, check out [Mau](https://mau.nestjs.com), our official platform for deploying NestJS applications on AWS. Mau makes deployment straightforward and fast, requiring just a few simple steps:
+## Database & Prisma
 
-```bash
-$ npm install -g @nestjs/mau
-$ mau deploy
-```
+- **Schema:** `prisma/schema.prisma`
+- **Generate client:** `npx prisma generate`
+- **Migration (dev):** `npx prisma migrate dev --name <name>`
+- **Migration (deploy):** `npx prisma migrate deploy`
+- **Studio (optional):** `npx prisma studio`
 
-With Mau, you can deploy your application in just a few clicks, allowing you to focus on building features rather than managing infrastructure.
+---
 
-## Resources
+## สคริปต์
 
-Check out a few resources that may come in handy when working with NestJS:
+| สคริปต์ | คำอธิบาย |
+|--------|----------|
+| `npm run start` | รันแบบ production |
+| `npm run start:dev` | รันแบบ watch (development) |
+| `npm run start:debug` | รันแบบ debug |
+| `npm run start:prod` | รันจาก `dist/` (หลัง build) |
+| `npm run build` | Build โปรเจกต์ |
+| `npm run test` | Unit tests |
+| `npm run test:e2e` | E2E tests |
+| `npm run test:cov` | Test coverage |
+| `npm run lint` | ESLint |
+| `npm run format` | Prettier |
 
-- Visit the [NestJS Documentation](https://docs.nestjs.com) to learn more about the framework.
-- For questions and support, please visit our [Discord channel](https://discord.gg/G7Qnnhy).
-- To dive deeper and get more hands-on experience, check out our official video [courses](https://courses.nestjs.com/).
-- Deploy your application to AWS with the help of [NestJS Mau](https://mau.nestjs.com) in just a few clicks.
-- Visualize your application graph and interact with the NestJS application in real-time using [NestJS Devtools](https://devtools.nestjs.com).
-- Need help with your project (part-time to full-time)? Check out our official [enterprise support](https://enterprise.nestjs.com).
-- To stay in the loop and get updates, follow us on [X](https://x.com/nestframework) and [LinkedIn](https://linkedin.com/company/nestjs).
-- Looking for a job, or have a job to offer? Check out our official [Jobs board](https://jobs.nestjs.com).
+---
 
-## Support
+## ลิงก์ที่เกี่ยวข้อง
 
-Nest is an MIT-licensed open source project. It can grow thanks to the sponsors and support by the amazing backers. If you'd like to join them, please [read more here](https://docs.nestjs.com/support).
+- [README หลักของโปรเจกต์](../README.md) — ภาพรวมทั้งแอป (Frontend + Backend)
+- [Frontend README](../frontend/README.md)
+- [Frontend Deployment](../frontend/DEPLOYMENT-GUIDE.md)
 
-## Stay in touch
-
-- Author - [Kamil Myśliwiec](https://twitter.com/kammysliwiec)
-- Website - [https://nestjs.com](https://nestjs.com/)
-- Twitter - [@nestframework](https://twitter.com/nestframework)
+---
 
 ## License
 
-Nest is [MIT licensed](https://github.com/nestjs/nest/blob/master/LICENSE).
+ตามที่กำหนดในโปรเจกต์ (MIT หรือตามสัญญาอนุญาตของโปรเจกต์)
