@@ -1,3 +1,12 @@
+# ================================
+# Frontend (Next.js) - Kubernetes Deployment & Service — Smart Cabinet CU
+# ================================
+# ตัวแปร env ตรงกับ frontend/.env.example (NEXT_PUBLIC_BASE_PATH=/smart-cabinet-cu ฯลฯ)
+# ก่อน deploy: build image แล้ว import เข้า K3s
+#   docker build -f docker/Dockerfile --build-arg NEXT_PUBLIC_API_URL=... --build-arg NEXT_PUBLIC_BASE_PATH=/smart-cabinet-cu -t frontend-smart-cabinet:latest .
+#   docker save frontend-smart-cabinet:latest | sudo k3s ctr images import -
+#   kubectl apply -f k8s/frontend-deployment.yaml
+
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -19,36 +28,35 @@ spec:
     spec:
       containers:
         - name: frontend
-          image: frontend-pose:latest
-          imagePullPolicy: Never  # ใช้ local image
+          image: frontend-smart-cabinet:latest
+          imagePullPolicy: Never
           ports:
             - containerPort: 3100
               name: http
           env:
             - name: NODE_ENV
               value: "production"
-            - name: NEXT_PUBLIC_API_URL
-              value: "https://phc.dyndns.biz/medical-supplies-api/v1/"  # Gateway API URL (via Apache proxy)
-            # Build ธรรมดา (ไม่ใช้ basePath) - Apache จะ strip prefix ออก
-            - name: NEXT_PUBLIC_BASE_PATH
-              value: "/medical-supplies"
             - name: PORT
               value: "3100"
-            # NextAuth Configuration
+            # ตรงกับ .env.example — แก้ให้ตรงกับสภาพแวดล้อม (หรือใช้ ConfigMap/Secret)
+            - name: NEXT_PUBLIC_API_URL
+              value: "http://<BACKEND_HOST>:30080/smart-cabinet-cu/api/v1"
+            - name: NEXT_PUBLIC_BASE_PATH
+              value: "/smart-cabinet-cu"
             - name: NEXTAUTH_SECRET
               value: "fKwpUMTYNf8bJZ8hJqDwy6KeXfJgkBce9H9gm48VzvU="
             - name: NEXTAUTH_URL
-              value: "https://phc.dyndns.biz/medical-supplies/"  # Frontend public URL with NodePort
+              value: "http://<FRONTEND_PUBLIC_URL>:30100/smart-cabinet-cu"
           resources:
             requests:
-              memory: "64Mi"   # ลดจาก 128Mi (ใช้จริง 43-46MB)
-              cpu: "100m"       # ลดจาก 100m
+              memory: "64Mi"
+              cpu: "100m"
             limits:
-              memory: "128Mi"  # ลดจาก 512Mi (ใช้จริง 43-46MB + buffer)
-              cpu: "400m"      # ลดจาก 500m
+              memory: "128Mi"
+              cpu: "400m"
           livenessProbe:
             httpGet:
-              path: /medical-supplies
+              path: /smart-cabinet-cu
               port: 3100
             initialDelaySeconds: 30
             periodSeconds: 10
@@ -56,7 +64,7 @@ spec:
             failureThreshold: 3
           readinessProbe:
             httpGet:
-              path: /medical-supplies
+              path: /smart-cabinet-cu
               port: 3100
             initialDelaySeconds: 10
             periodSeconds: 5
@@ -80,6 +88,5 @@ spec:
       protocol: TCP
       port: 80
       targetPort: 3100
-      nodePort: 30100  # NodePort must be in range 30000-32767 (container uses port 3100)
+      nodePort: 30100
   sessionAffinity: ClientIP
-

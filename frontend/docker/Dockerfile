@@ -1,6 +1,7 @@
 # ================================
-# Multi-stage Dockerfile for Next.js Frontend
+# Multi-stage Dockerfile for Next.js Frontend (Smart Cabinet CU)
 # ================================
+# ตัวแปร build ตรงกับ frontend/.env.example (NEXT_PUBLIC_BASE_PATH, NEXT_PUBLIC_API_URL)
 
 # --------------------------------
 # Stage 1: Dependencies
@@ -42,9 +43,9 @@ COPY . .
 ENV NEXT_TELEMETRY_DISABLED=1
 ENV NODE_ENV=production
 
-# Accept build args for Next.js public environment variables (with defaults)
-ARG NEXT_PUBLIC_API_URL=https://phc.dyndns.biz/medical-supplies-api/v1/
-ARG NEXT_PUBLIC_BASE_PATH=/medical-supplies
+# Build args — ตรงกับ .env.example (Smart Cabinet CU)
+ARG NEXT_PUBLIC_API_URL=http://localhost:3000/smart-cabinet-cu/api/v1
+ARG NEXT_PUBLIC_BASE_PATH=/smart-cabinet-cu
 ENV NEXT_PUBLIC_API_URL=${NEXT_PUBLIC_API_URL}
 ENV NEXT_PUBLIC_BASE_PATH=${NEXT_PUBLIC_BASE_PATH}
 
@@ -68,9 +69,9 @@ ENV NODE_ENV=production
 ENV NEXT_TELEMETRY_DISABLED=1
 ENV PORT=3100
 
-# Accept build args for Next.js public environment variables (for runtime reference, with defaults)
-ARG NEXT_PUBLIC_API_URL=https://phc.dyndns.biz/medical-supplies-api/v1/
-ARG NEXT_PUBLIC_BASE_PATH=/medical-supplies
+# Runtime env (ต้องตรงกับ build time สำหรับ Next.js public vars)
+ARG NEXT_PUBLIC_API_URL=http://localhost:3000/smart-cabinet-cu/api/v1
+ARG NEXT_PUBLIC_BASE_PATH=/smart-cabinet-cu
 ENV NEXT_PUBLIC_API_URL=${NEXT_PUBLIC_API_URL}
 ENV NEXT_PUBLIC_BASE_PATH=${NEXT_PUBLIC_BASE_PATH}
 
@@ -92,9 +93,9 @@ USER nextjs
 # Expose port
 EXPOSE 3100
 
-# Health check - Check basePath root (without trailing slash)
+# Health check — ตรงกับ NEXT_PUBLIC_BASE_PATH (/smart-cabinet-cu)
 HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
-    CMD node -e "require('http').get('http://localhost:3100/medical-supplies', (r) => {process.exit(r.statusCode === 200 ? 0 : 1)})"
+    CMD node -e "require('http').get('http://localhost:3100/smart-cabinet-cu', (r) => {process.exit(r.statusCode === 200 ? 0 : 1)})"
 
 # Start application
 CMD ["node", "server.js"]
