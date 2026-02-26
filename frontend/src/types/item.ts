@@ -1,5 +1,3 @@
-import type { User } from './auth';
-
 // Category Types
 export interface Category {
   id: number;

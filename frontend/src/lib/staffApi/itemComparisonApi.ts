@@ -11,7 +11,7 @@ export const itemComparisonApi = {
     departmentCode?: string;
     page?: number;
     limit?: number;
-  }): Promise<ApiResponse<any>> => {
+  }): Promise<ApiResponse<unknown>> => {
     const response = await staffApi.get('/medical-supply/compare-dispensed-vs-usage', { params: query });
     return response.data;
   },
@@ -26,7 +26,7 @@ export const itemComparisonApi = {
     departmentCode?: string;
     page?: number;
     limit?: number;
-  }): Promise<ApiResponse<any>> => {
+  }): Promise<ApiResponse<unknown>> => {
     const response = await staffApi.get('/medical-supply/usage-by-item-code-from-item-table', { params: query });
     return response.data;
   },
@@ -50,7 +50,7 @@ export const itemComparisonApi = {
     };
     const response = await staffApi.post('/reports/item-comparison/excel', body);
     const res = response.data as { success?: boolean; data?: { buffer?: string; filename?: string; contentType?: string } };
-    if (!res?.success || !res?.data?.buffer) throw new Error((res as any)?.error || 'ไม่สามารถสร้างไฟล์ได้');
+    if (!res?.success || !res?.data?.buffer) throw new Error((res as { error?: string })?.error || 'ไม่สามารถสร้างไฟล์ได้');
     const binary = atob(res.data.buffer);
     const bytes = new Uint8Array(binary.length);
     for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
@@ -84,7 +84,7 @@ export const itemComparisonApi = {
     };
     const response = await staffApi.post('/reports/item-comparison/pdf', body);
     const res = response.data as { success?: boolean; data?: { buffer?: string; filename?: string; contentType?: string } };
-    if (!res?.success || !res?.data?.buffer) throw new Error((res as any)?.error || 'ไม่สามารถสร้างไฟล์ได้');
+    if (!res?.success || !res?.data?.buffer) throw new Error((res as { error?: string })?.error || 'ไม่สามารถสร้างไฟล์ได้');
     const binary = atob(res.data.buffer);
     const bytes = new Uint8Array(binary.length);
     for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);

@@ -353,7 +353,7 @@ export const medicalSuppliesApi = {
     return_reason: string;
     return_by_user_id: string;
     return_note?: string;
-  }): Promise<ApiResponse<any>> => {
+  }): Promise<ApiResponse<unknown>> => {
     const response = await api.post('/medical-supply-items/record-return', data);
     return response.data;
   },
@@ -364,7 +364,7 @@ export const medicalSuppliesApi = {
     item_status?: string;
     page?: number;
     limit?: number;
-  }): Promise<ApiResponse<any>> => {
+  }): Promise<ApiResponse<unknown>> => {
     const response = await api.get('/medical-supply-items/pending', { params: query });
     return response.data;
   },
@@ -377,7 +377,7 @@ export const medicalSuppliesApi = {
     date_to?: string;
     page?: number;
     limit?: number;
-  }): Promise<ApiResponse<any>> => {
+  }): Promise<ApiResponse<unknown>> => {
     const response = await api.get('/medical-supply-items/return-history', { params: query });
     return response.data;
   },
@@ -390,7 +390,7 @@ export const medicalSuppliesApi = {
     endDate?: string;
     page?: number;
     limit?: number;
-  }): Promise<ApiResponse<any>> => {
+  }): Promise<ApiResponse<unknown>> => {
     const queryParams = new URLSearchParams();
     if (filters?.itemCode) queryParams.append('itemCode', filters.itemCode);
     if (filters?.itemTypeId) queryParams.append('itemTypeId', filters.itemTypeId.toString());
@@ -405,9 +405,9 @@ export const medicalSuppliesApi = {
 
   recordStockReturn: async (data: {
     items: Array<{ item_stock_id: number; return_reason: string; return_note?: string }>;
-    return_by_user_id: string;
+    return_by_user_id?: string;
     stock_id?: number;
-  }): Promise<ApiResponse<any>> => {
+  }): Promise<ApiResponse<{ updatedCount?: number }>> => {
     const response = await api.post('/medical-supply-items/record-stock-returns', {
       ...data,
       return_by_user_id: data.return_by_user_id || 'admin',
@@ -415,7 +415,7 @@ export const medicalSuppliesApi = {
     return response.data;
   },
 
-  returnItemsToCabinet: async (rowIds: number[], userId?: number): Promise<ApiResponse<any>> => {
+  returnItemsToCabinet: async (rowIds: number[], userId?: number): Promise<ApiResponse<unknown>> => {
     const response = await api.post('/medical-supply-items/return-to-cabinet', {
       rowIds,
       userId: userId ?? 0,

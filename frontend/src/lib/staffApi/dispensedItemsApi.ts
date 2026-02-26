@@ -10,7 +10,7 @@ export const DispensedItemsApi = {
     limit?: number;
     departmentId?: string;
     cabinetId?: string;
-  }): Promise<ApiResponse<any> & {
+  }): Promise<ApiResponse<unknown> & {
     total?: number;
     page?: number;
     limit?: number;
@@ -37,7 +37,7 @@ export const DispensedItemsApi = {
     };
     const response = await staffApi.post('/reports/dispensed-items/excel', body);
     const res = response.data as { success?: boolean; data?: { buffer?: string; filename?: string; contentType?: string } };
-    if (!res?.success || !res?.data?.buffer) throw new Error((res as any)?.error || 'ไม่สามารถสร้างไฟล์ได้');
+    if (!res?.success || !res?.data?.buffer) throw new Error((res as { error?: string })?.error || 'ไม่สามารถสร้างไฟล์ได้');
     const binary = atob(res.data.buffer);
     const bytes = new Uint8Array(binary.length);
     for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
@@ -69,7 +69,7 @@ export const DispensedItemsApi = {
     };
     const response = await staffApi.post('/reports/dispensed-items/pdf', body);
     const res = response.data as { success?: boolean; data?: { buffer?: string; filename?: string; contentType?: string } };
-    if (!res?.success || !res?.data?.buffer) throw new Error((res as any)?.error || 'ไม่สามารถสร้างไฟล์ได้');
+    if (!res?.success || !res?.data?.buffer) throw new Error((res as { error?: string })?.error || 'ไม่สามารถสร้างไฟล์ได้');
     const binary = atob(res.data.buffer);
     const bytes = new Uint8Array(binary.length);
     for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);

@@ -21,7 +21,8 @@ export default function CreateCabinetDialog({
   onSuccess,
 }: CreateCabinetDialogProps) {
   const [loading, setLoading] = useState(false);
-  const [departments, setDepartments] = useState<Array<{ ID: number; DepName?: string; RefDepID?: string }>>([]);
+  type Dept = { ID: number; DepName?: string; RefDepID?: string };
+  const [departments, setDepartments] = useState<Dept[]>([]);
   const [formData, setFormData] = useState({
     cabinet_name: '',
     department_id: '',
@@ -31,7 +32,7 @@ export default function CreateCabinetDialog({
   useEffect(() => {
     if (open) {
       staffDepartmentApi.getAll({ limit: 500 }).then((res) => {
-        if (res.data && Array.isArray(res.data)) setDepartments(res.data);
+        if (res.data && Array.isArray(res.data)) setDepartments(res.data as Dept[]);
       }).catch(() => setDepartments([]));
     }
   }, [open]);

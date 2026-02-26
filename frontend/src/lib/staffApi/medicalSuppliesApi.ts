@@ -2,7 +2,7 @@ import staffApi from './index';
 import type { ApiResponse, PaginatedResponse } from '@/types/common';
 
 export const staffMedicalSuppliesApi = {
-    create: async (data: any): Promise<ApiResponse<any>> => {
+    create: async (data: Record<string, unknown>): Promise<ApiResponse<any>> => {
         const response = await staffApi.post('/medical-supplies', data);
         return response.data;
     },
@@ -33,7 +33,7 @@ export const staffMedicalSuppliesApi = {
         return response.data;
     },
 
-    update: async (id: number, data: any): Promise<ApiResponse<any>> => {
+    update: async (id: number, data: Record<string, unknown>): Promise<ApiResponse<any>> => {
         const response = await staffApi.put(`/medical-supplies/${id}`, data);
         return response.data;
     },

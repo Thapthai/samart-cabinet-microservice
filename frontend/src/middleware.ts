@@ -3,6 +3,7 @@ import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 
 export default withAuth(
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   function middleware(req: NextRequest & { nextauth: { token: any } }) {
     const pathname = req.nextUrl.pathname;
     const basePath = process.env.NEXT_PUBLIC_BASE_PATH || '';

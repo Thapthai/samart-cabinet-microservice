@@ -1,5 +1,4 @@
 import staffApi from './index';
-import type { Item, CreateItemDto, UpdateItemDto, GetItemsQuery } from '@/types/item';
 import type { ApiResponse, PaginatedResponse } from '@/types/common';
 
 // =========================== Cabinet API ===========================
@@ -14,7 +13,7 @@ export const staffCabinetApi = {
 export const staffCabinetDepartmentApi = {
   getAll: async (params?: { cabinetId?: number; departmentId?: number; status?: string; keyword?: string }): Promise<ApiResponse<any[]>> => {
     // แปลง camelCase -> snake_case ให้ตรงกับ backend
-    const apiParams: any = {};
+    const apiParams: Record<string, unknown> = {};
     if (params?.cabinetId !== undefined) apiParams.cabinet_id = params.cabinetId;
     if (params?.departmentId !== undefined) apiParams.department_id = params.departmentId;
     if (params?.status !== undefined) apiParams.status = params.status;
@@ -24,12 +23,12 @@ export const staffCabinetDepartmentApi = {
     return response.data;
   },
 
-  create: async (data: any): Promise<ApiResponse<any>> => {
+  create: async (data: Record<string, unknown>): Promise<ApiResponse<any>> => {
     const response = await staffApi.post('/cabinet-departments', data);
     return response.data;
   },
 
-  update: async (id: number, data: any): Promise<ApiResponse<any>> => {
+  update: async (id: number, data: Record<string, unknown>): Promise<ApiResponse<any>> => {
     const response = await staffApi.put(`/cabinet-departments/${id}`, data);
     return response.data;
   },

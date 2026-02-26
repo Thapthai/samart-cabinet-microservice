@@ -90,14 +90,15 @@ export default function MappingTable({ mappings, onEdit, onDelete }: MappingTabl
       });
 
       if (response.success && response.data) {
-        setItemStocks(prev => ({ ...prev, [cabinetId]: response.data }));
+        setItemStocks(prev => ({ ...prev, [cabinetId]: response.data as ItemStock[] }));
         setDropdownPage(prev => ({ ...prev, [cabinetId]: 1 }));
       } else {
         toast.error("ไม่สามารถโหลดข้อมูล ItemStock ได้");
       }
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error("Error loading item stocks:", error);
-      toast.error(error.message || "เกิดข้อผิดพลาดในการโหลดข้อมูล");
+      const msg = error instanceof Error ? error.message : "เกิดข้อผิดพลาดในการโหลดข้อมูล";
+      toast.error(msg);
     } finally {
       setLoadingItemStock(null);
     }
@@ -115,8 +116,9 @@ export default function MappingTable({ mappings, onEdit, onDelete }: MappingTabl
   };
 
   // Helper function to group item stocks by item code
+  type GroupedByCode = { itemcode: string; itemname: string; stocks: ItemStock[]; totalQty: number; inStockCount: number; dispensedCount: number };
   const groupItemStocksByCode = (stocks: ItemStock[]) => {
-    const grouped = stocks.reduce((acc: any, stock: ItemStock) => {
+    const grouped = stocks.reduce((acc: Record<string, GroupedByCode>, stock: ItemStock) => {
       const itemCode = stock.item?.itemcode || stock.ItemCode || '-';
       if (!acc[itemCode]) {
         acc[itemCode] = {
@@ -137,7 +139,7 @@ export default function MappingTable({ mappings, onEdit, onDelete }: MappingTabl
         acc[itemCode].dispensedCount += 1;
       }
       return acc;
-    }, {});
+    }, {} as Record<string, GroupedByCode>);
     return Object.values(grouped);
   };
 

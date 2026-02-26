@@ -1,9 +1,9 @@
 import staffApi from './index';
-import type { ApiResponse, PaginatedResponse } from '@/types/common';
+import type { ApiResponse } from '@/types/common';
 
 export const staffVendingReportsApi = {
   // Get data (JSON)
-  getVendingMappingData: async (params?: { startDate?: string; endDate?: string; printDate?: string }): Promise<ApiResponse<any>> => {
+  getVendingMappingData: async (params?: { startDate?: string; endDate?: string; printDate?: string }): Promise<ApiResponse<unknown>> => {
     const queryParams = new URLSearchParams();
     if (params?.printDate) queryParams.append('printDate', params.printDate);
     if (params?.startDate) queryParams.append('startDate', params.startDate);
@@ -11,7 +11,7 @@ export const staffVendingReportsApi = {
     const response = await staffApi.get(`/reports/vending-mapping/data?${queryParams.toString()}`);
     return response.data;
   },
-  getUnmappedDispensedData: async (params?: { startDate?: string; endDate?: string; groupBy?: 'day' | 'month' }): Promise<ApiResponse<any>> => {
+  getUnmappedDispensedData: async (params?: { startDate?: string; endDate?: string; groupBy?: 'day' | 'month' }): Promise<ApiResponse<unknown>> => {
     const queryParams = new URLSearchParams();
     if (params?.startDate) queryParams.append('startDate', params.startDate);
     if (params?.endDate) queryParams.append('endDate', params.endDate);
@@ -19,13 +19,13 @@ export const staffVendingReportsApi = {
     const response = await staffApi.get(`/reports/unmapped-dispensed/data?${queryParams.toString()}`);
     return response.data;
   },
-  getUnusedDispensedData: async (params?: { date?: string }): Promise<ApiResponse<any>> => {
+  getUnusedDispensedData: async (params?: { date?: string }): Promise<ApiResponse<unknown>> => {
     const queryParams = new URLSearchParams();
     if (params?.date) queryParams.append('date', params.date);
     const response = await staffApi.get(`/reports/unused-dispensed/data?${queryParams.toString()}`);
     return response.data;
   },
-  getCancelBillReportData: async (params?: { startDate?: string; endDate?: string }): Promise<ApiResponse<any>> => {
+  getCancelBillReportData: async (params?: { startDate?: string; endDate?: string }): Promise<ApiResponse<unknown>> => {
     const queryParams = new URLSearchParams();
     if (params?.startDate) queryParams.append('startDate', params.startDate);
     if (params?.endDate) queryParams.append('endDate', params.endDate);

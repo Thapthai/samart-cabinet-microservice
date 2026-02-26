@@ -231,7 +231,7 @@ export default function ReturnMedicalSuppliesPage() {
         return_note: note?.trim() || undefined,
       }));
 
-      const resp: any = await medicalSuppliesApi.recordStockReturn({
+      const resp = await medicalSuppliesApi.recordStockReturn({
         items,
         return_by_user_id: user?.id != null ? `admin:${user.id}` : undefined,
         ...(selectedItem?.StockID != null && { stock_id: selectedItem.StockID }),
@@ -240,7 +240,7 @@ export default function ReturnMedicalSuppliesPage() {
       if (resp?.success) {
         toast.success(
           resp.message ||
-            `บันทึกการแจ้งอุปกรณ์ที่ไม่ถูกใช้งาน / ชำรุดสำเร็จ ${resp.updatedCount ?? items.length} รายการ`,
+            `บันทึกการแจ้งอุปกรณ์ที่ไม่ถูกใช้งาน / ชำรุดสำเร็จ ${resp.data?.updatedCount ?? items.length} รายการ`,
         );
         setSelectedItemCode('');
         setSelectedStockID(null);
@@ -248,10 +248,11 @@ export default function ReturnMedicalSuppliesPage() {
         setNote('');
         await loadWillReturnItems();
       } else {
-        toast.error(resp?.error || 'ไม่สามารถบันทึกการแจ้งอุปกรณ์ได้');
+        toast.error(resp?.message || 'ไม่สามารถบันทึกการแจ้งอุปกรณ์ได้');
       }
-    } catch (error: any) {
-      toast.error(`เกิดข้อผิดพลาด: ${error.message || error}`);
+    } catch (error: unknown) {
+      const msg = error instanceof Error ? error.message : String(error);
+      toast.error(`เกิดข้อผิดพลาด: ${msg}`);
     } finally {
       setLoading(false);
     }
@@ -282,8 +283,9 @@ export default function ReturnMedicalSuppliesPage() {
         page: Number(page) || 1,
         limit: Number(limitVal) || returnHistoryLimit,
       });
-    } catch (error: any) {
-      toast.error(`เกิดข้อผิดพลาด: ${error?.message || error}`);
+    } catch (error: unknown) {
+      const msg = error instanceof Error ? error.message : String(error);
+      toast.error(`เกิดข้อผิดพลาด: ${msg}`);
       setReturnHistoryData({ data: [], total: 0, page: 1, limit: returnHistoryLimit });
     } finally {
       setHistoryLoading(false);

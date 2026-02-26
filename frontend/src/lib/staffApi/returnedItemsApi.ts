@@ -14,7 +14,7 @@ export const returnedItemsApi = {
     cabinetId?: string | number;
     departmentCode?: string;
     cabinetCode?: string;
-  }): Promise<ApiResponse<any>> => {
+  }): Promise<ApiResponse<unknown>> => {
     const response = await staffApi.get('/medical-supply/returned-items', { params: query });
     return response.data;
   },

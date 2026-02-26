@@ -50,7 +50,7 @@ export default function CabinetsPage() {
   const fetchCabinets = async () => {
     try {
       setLoading(true);
-      const params: any = {
+      const params: { page: number; limit: number; keyword?: string } = {
         page: currentPage,
         limit: itemsPerPage,
       };
@@ -61,11 +61,11 @@ export default function CabinetsPage() {
 
       const response = await staffCabinetApi.getAll(params);
       if (response.data) {
-        setCabinets(response.data);
+        setCabinets(response.data as Cabinet[]);
         setTotalItems(response.total || 0);
         setTotalPages(response.lastPage || 1);
       }
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Failed to fetch cabinets:', error);
       toast.error('ไม่สามารถโหลดข้อมูลตู้ Cabinet ได้');
     } finally {
