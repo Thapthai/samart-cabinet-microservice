@@ -100,7 +100,7 @@ export default function DispenseFromCabinetStockPage() {
 
     try {
       setLoading(true);
-      const result: any = await medicalSuppliesApi.dispenseItemsFromCabinet(selectedRowIds);
+      const result: any = await medicalSuppliesApi.dispenseItemsFromCabinet(selectedRowIds, (user as any)?.id ?? 0);
       
       if (result.success) {
         toast.success(result.message || `เบิกอุปกรณ์จากตู้สำเร็จ ${result.updatedCount} รายการ`);

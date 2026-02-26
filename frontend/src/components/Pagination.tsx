@@ -138,8 +138,8 @@ export default function Pagination({ currentPage, totalPages, onPageChange, load
                   size="icon"
                   className={`h-9 min-w-[2.25rem] ${
                     isActive
-                      ? 'bg-blue-600 hover:bg-blue-700 text-white'
-                      : 'hover:bg-gray-100'
+                      ? 'bg-pink-600 hover:bg-pink-700 text-white'
+                      : 'hover:bg-pink-50'
                   }`}
                 >
                   {pageNum.toLocaleString()}

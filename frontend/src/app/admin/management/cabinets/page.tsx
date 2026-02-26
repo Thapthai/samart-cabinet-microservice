@@ -61,11 +61,18 @@ export default function CabinetsPage() {
         params.keyword = searchTerm;
       }
       
-      const response = await cabinetApi.getAll(params);
-      if (response.data) {
+      const response = await cabinetApi.getAll(params) as { success?: boolean; data?: any[]; total?: number; lastPage?: number; message?: string };
+      if (response?.success === false) {
+        toast.error(response.message || 'โหลดข้อมูลตู้ไม่สำเร็จ');
+        setCabinets([]);
+        setTotalItems(0);
+        setTotalPages(1);
+        return;
+      }
+      if (response?.data) {
         setCabinets(response.data);
-        setTotalItems(response.total || 0);
-        setTotalPages(response.lastPage || 1);
+        setTotalItems(response.total ?? 0);
+        setTotalPages(response.lastPage ?? 1);
       }
     } catch (error: any) {
       console.error('Failed to fetch cabinets:', error);

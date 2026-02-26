@@ -194,7 +194,7 @@ export default function Sidebar({ isCollapsed, setIsCollapsed }: SidebarProps) {
         <button
           type="button"
           onClick={() => setIsMobileOpen(!isMobileOpen)}
-          className="bg-white shadow-lg hover:bg-gray-50 border border-gray-200 h-9 w-9 rounded-md flex items-center justify-center"
+          className="bg-white shadow-lg hover:bg-pink-50 border border-pink-200 h-9 w-9 rounded-md flex items-center justify-center"
         >
           {isMobileOpen ? <X className="h-4 w-4" /> : <Menu className="h-4 w-4" />}
         </button>
@@ -209,24 +209,24 @@ export default function Sidebar({ isCollapsed, setIsCollapsed }: SidebarProps) {
 
       <aside
         className={cn(
-          "fixed top-0 left-0 z-40 h-screen bg-gradient-to-b from-slate-900 via-slate-800 to-slate-900 text-white shadow-2xl overflow-x-hidden",
+          "fixed top-0 left-0 z-40 h-screen bg-gradient-to-b from-pink-100 via-pink-50 to-rose-100 text-gray-800 shadow-2xl overflow-x-hidden border-r border-pink-200/60",
           "transition-[width,transform] duration-300 ease-[cubic-bezier(0.4,0,0.2,1)]",
           isCollapsed ? "lg:w-16" : "w-64 lg:w-64",
           isMobileOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0"
         )}
       >
         <div className="flex flex-col h-full">
-          <div className={cn("flex items-center justify-between border-b border-slate-700/50 transition-[padding] duration-300 ease-[cubic-bezier(0.4,0,0.2,1)] p-4", isCollapsed && "lg:p-2")}>
+          <div className={cn("flex items-center justify-between border-b border-pink-200/80 transition-[padding] duration-300 ease-[cubic-bezier(0.4,0,0.2,1)] p-4", isCollapsed && "lg:p-2")}>
             {!isCollapsed && (
               <Link
                 href="/admin/dashboard"
                 className="flex items-center space-x-3 flex-1 min-w-0"
               >
-                <div className="w-45 h-15 rounded-lg bg-white flex items-center justify-center shadow-lg flex-shrink-0 overflow-hidden ring-1 ring-slate-600/50 p-1">
+                <div className="w-45 h-15 flex items-center justify-center flex-shrink-0 overflow-hidden">
                   <img
                     src={ASSETS.LOGO}
                     alt="POSE Logo"
-                    className="w-full h-full object-contain"
+                    className="max-w-full max-h-full w-auto h-auto object-contain"
                   />
                 </div>
 
@@ -235,12 +235,12 @@ export default function Sidebar({ isCollapsed, setIsCollapsed }: SidebarProps) {
             {isCollapsed && (
               <Link
                 href="/admin/dashboard"
-                className="w-50 h-15 rounded-lg bg-white flex items-center justify-center mx-auto shadow-lg overflow-hidden ring-1 ring-slate-600/50 p-1"
+                className="w-50 h-15 flex items-center justify-center mx-auto overflow-hidden"
               >
                 <img
                   src={ASSETS.LOGO}
                   alt="POSE"
-                  className="w-full h-full object-contain"
+                  className="max-w-full max-h-full w-auto h-auto object-contain"
                 />
               </Link>
             )}
@@ -249,7 +249,7 @@ export default function Sidebar({ isCollapsed, setIsCollapsed }: SidebarProps) {
               onClick={() =>
                 isMobileOpen ? setIsMobileOpen(false) : setIsCollapsed(!isCollapsed)
               }
-              className="hidden lg:flex flex-shrink-0 items-center justify-center w-9 h-9 rounded-lg text-slate-300 hover:text-white hover:bg-slate-700/50 transition-colors duration-200"
+              className="hidden lg:flex flex-shrink-0 items-center justify-center w-9 h-9 rounded-lg text-gray-600 hover:text-gray-800 hover:bg-pink-200/50 transition-colors duration-200"
             >
               {isCollapsed ? (
                 <ChevronRight className="h-4 w-4 transition-transform duration-200" />
@@ -274,8 +274,8 @@ export default function Sidebar({ isCollapsed, setIsCollapsed }: SidebarProps) {
                     className={cn(
                       "flex items-center w-full rounded-xl",
                       isActive
-                        ? "bg-gradient-to-r from-blue-500 to-purple-600 text-white"
-                        : "bg-slate-800/40 text-slate-300 hover:bg-slate-700/50 hover:text-white",
+                        ? "bg-gradient-to-r from-pink-500 to-rose-400 text-white"
+                        : "text-gray-700 hover:bg-pink-200/60 hover:text-gray-900",
                       isCollapsed && "lg:justify-center lg:px-2"
                     )}
                   >
@@ -288,11 +288,11 @@ export default function Sidebar({ isCollapsed, setIsCollapsed }: SidebarProps) {
                         }}
                         className={cn(
                           "flex items-center flex-1 min-w-0 px-3 py-3 text-sm font-medium rounded-xl text-left cursor-pointer",
-                          isActive ? "text-white" : "text-inherit hover:text-white",
+                          isActive ? "text-white" : "text-inherit",
                           isCollapsed && "lg:justify-center lg:px-2"
                         )}
                       >
-                        <Icon className={cn("h-5 w-5 flex-shrink-0 transition-all duration-200", isActive ? "text-white" : "text-slate-300", isCollapsed ? "lg:mx-auto" : "mr-3")} />
+                        <Icon className={cn("h-5 w-5 flex-shrink-0 transition-all duration-200", isActive ? "text-white" : "text-gray-700", isCollapsed ? "lg:mx-auto" : "mr-3")} />
                         <span className={cn("flex-1 text-left truncate transition-opacity duration-200", isCollapsed && "lg:opacity-0 lg:w-0 lg:min-w-0 lg:overflow-hidden")}>{item.name}</span>
                       </button>
                     ) : (
@@ -301,11 +301,11 @@ export default function Sidebar({ isCollapsed, setIsCollapsed }: SidebarProps) {
                         onClick={() => setIsMobileOpen(false)}
                         className={cn(
                           "flex items-center flex-1 min-w-0 px-3 py-3 text-sm font-medium rounded-xl",
-                          isActive ? "text-white" : "text-inherit hover:text-white",
+                          isActive ? "text-white" : "text-inherit",
                           isCollapsed && "lg:justify-center lg:px-2"
                         )}
                       >
-                        <Icon className={cn("h-5 w-5 flex-shrink-0 transition-all duration-200", isActive ? "text-white" : "text-slate-300", isCollapsed ? "lg:mx-auto" : "mr-3")} />
+                        <Icon className={cn("h-5 w-5 flex-shrink-0 transition-all duration-200", isActive ? "text-white" : "text-gray-700", isCollapsed ? "lg:mx-auto" : "mr-3")} />
                         <span className={cn("flex-1 text-left truncate transition-opacity duration-200", isCollapsed && "lg:opacity-0 lg:w-0 lg:min-w-0 lg:overflow-hidden")}>{item.name}</span>
                       </Link>
                     )}
@@ -318,7 +318,7 @@ export default function Sidebar({ isCollapsed, setIsCollapsed }: SidebarProps) {
                           setOpenSubmenus((p) => ({ ...p, [item.href]: !open }));
                         }}
                         className={cn(
-                          "flex-shrink-0 p-2 rounded-lg text-inherit hover:bg-white/10 transition-colors",
+                          "flex-shrink-0 p-2 rounded-lg text-inherit hover:bg-pink-100 transition-colors",
                           isActive && "text-white"
                         )}
                         aria-expanded={open}
@@ -329,7 +329,7 @@ export default function Sidebar({ isCollapsed, setIsCollapsed }: SidebarProps) {
                     )}
                   </div>
                   {hasSubmenu && !isCollapsed && open && (
-                    <div className="ml-4 mt-1 space-y-1 border-l border-slate-700/50 pl-4">
+                    <div className="ml-4 mt-1 space-y-1 border-l border-pink-200/80 pl-4">
                       {item.submenu!.map((sub) => {
                         const SubIcon = sub.icon;
                         const hasNested = (sub.submenu?.length ?? 0) > 0;
@@ -343,7 +343,7 @@ export default function Sidebar({ isCollapsed, setIsCollapsed }: SidebarProps) {
                               <div
                                 className={cn(
                                   "flex items-center rounded-lg",
-                                  subActive ? "bg-blue-500/20 text-blue-300 border-l-2 border-blue-500" : "text-slate-400 hover:bg-slate-700/30 hover:text-slate-200"
+                                  subActive ? "bg-pink-200/70 text-gray-900 border-l-2 border-pink-500 font-medium" : "text-gray-600 hover:bg-pink-200/50 hover:text-gray-900"
                                 )}
                               >
                                 <Link
@@ -351,7 +351,7 @@ export default function Sidebar({ isCollapsed, setIsCollapsed }: SidebarProps) {
                                   onClick={() => setIsMobileOpen(false)}
                                   className="flex flex-1 min-w-0 items-center px-3 py-2 text-sm rounded-lg text-inherit"
                                 >
-                                  {SubIcon ? <SubIcon className="h-4 w-4 mr-2 flex-shrink-0" /> : <span className="w-1.5 h-1.5 rounded-full bg-slate-500 mr-2" />}
+                                  {SubIcon ? <SubIcon className="h-4 w-4 mr-2 flex-shrink-0" /> : <span className="w-1.5 h-1.5 rounded-full bg-pink-400 mr-2" />}
                                   <span className="truncate">{sub.name}</span>
                                 </Link>
                                 <button
@@ -361,7 +361,7 @@ export default function Sidebar({ isCollapsed, setIsCollapsed }: SidebarProps) {
                                     e.stopPropagation();
                                     setOpenSubmenus((p) => ({ ...p, [nestedKey]: !nestedOpen }));
                                   }}
-                                  className="flex-shrink-0 p-1.5 rounded text-inherit hover:bg-white/10"
+                                  className="flex-shrink-0 p-1.5 rounded text-inherit hover:bg-pink-100"
                                   aria-expanded={nestedOpen}
                                   aria-label={nestedOpen ? "ปิดเมนูย่อย" : "เปิดเมนูย่อย"}
                                 >
@@ -369,7 +369,7 @@ export default function Sidebar({ isCollapsed, setIsCollapsed }: SidebarProps) {
                                 </button>
                               </div>
                               {nestedOpen && (
-                                <div className="ml-3 mt-1 space-y-1 border-l border-slate-600/50 pl-3">
+                                <div className="ml-3 mt-1 space-y-1 border-l border-pink-200 pl-3">
                                   {sub.submenu!.map((inner) => {
                                     const InnerIcon = inner.icon;
                                     const innerActive = isPathActive(pathname, inner.href);
@@ -380,10 +380,10 @@ export default function Sidebar({ isCollapsed, setIsCollapsed }: SidebarProps) {
                                         onClick={() => setIsMobileOpen(false)}
                                         className={cn(
                                           "flex items-center px-3 py-2 text-sm rounded-lg",
-                                          innerActive ? "bg-blue-500/20 text-blue-300 border-l-2 border-blue-500" : "text-slate-400 hover:bg-slate-700/30 hover:text-slate-200"
+                                          innerActive ? "bg-pink-200/70 text-gray-900 border-l-2 border-pink-500 font-medium" : "text-gray-600 hover:bg-pink-200/50 hover:text-gray-900"
                                         )}
                                       >
-                                        {InnerIcon ? <InnerIcon className="h-4 w-4 mr-2 flex-shrink-0" /> : <span className="w-1.5 h-1.5 rounded-full bg-slate-500 mr-2" />}
+                                        {InnerIcon ? <InnerIcon className="h-4 w-4 mr-2 flex-shrink-0" /> : <span className="w-1.5 h-1.5 rounded-full bg-pink-400 mr-2" />}
                                         <span>{inner.name}</span>
                                       </Link>
                                     );
@@ -401,10 +401,10 @@ export default function Sidebar({ isCollapsed, setIsCollapsed }: SidebarProps) {
                             onClick={() => setIsMobileOpen(false)}
                             className={cn(
                               "flex items-center px-3 py-2 text-sm rounded-lg",
-                              subActive ? "bg-blue-500/20 text-blue-300 border-l-2 border-blue-500" : "text-slate-400 hover:bg-slate-700/30 hover:text-slate-200"
+                              subActive ? "bg-pink-200/70 text-gray-900 border-l-2 border-pink-500 font-medium" : "text-gray-600 hover:bg-pink-200/50 hover:text-gray-900"
                             )}
                           >
-                            {SubIcon ? <SubIcon className="h-4 w-4 mr-2 flex-shrink-0" /> : <span className="w-1.5 h-1.5 rounded-full bg-slate-500 mr-2" />}
+                            {SubIcon ? <SubIcon className="h-4 w-4 mr-2 flex-shrink-0" /> : <span className="w-1.5 h-1.5 rounded-full bg-pink-400 mr-2" />}
                             <span>{sub.name}</span>
                           </Link>
                         );
@@ -416,9 +416,9 @@ export default function Sidebar({ isCollapsed, setIsCollapsed }: SidebarProps) {
             })}
           </nav>
 
-          <div className={cn("p-4 border-t border-slate-700/50 transition-all duration-300", isCollapsed && "lg:px-2")}>
-            <div className={cn("flex items-center gap-2 text-slate-400 overflow-hidden", isCollapsed && "lg:justify-center")}>
-              <img src={ASSETS.LOGO} alt="POSE" width={20} height={20} className="object-contain flex-shrink-0" />
+          <div className={cn("p-4 border-t border-pink-200/80 transition-all duration-300", isCollapsed && "lg:px-2")}>
+            <div className={cn("flex items-center gap-2 text-gray-600 overflow-hidden", isCollapsed && "lg:justify-center")}>
+              <img src={ASSETS.LOGO} alt="POSE" width={20} height={20} className="object-contain flex-shrink-0 opacity-90" />
               <span className={cn("text-[10px] font-medium whitespace-nowrap transition-opacity duration-200", isCollapsed && "lg:opacity-0 lg:w-0 lg:min-w-0 lg:overflow-hidden")}>© 2026 POSE Intelligence</span>
             </div>
           </div>

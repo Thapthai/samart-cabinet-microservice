@@ -9,6 +9,18 @@ async function bootstrap() {
   app.useGlobalPipes(
     new ValidationPipe({ whitelist: true, forbidNonWhitelisted: true }),
   );
+
+  // CORS: อนุญาตให้ frontend (localhost:3100 หรือ origin จาก env) เรียก API ได้
+  const allowedOrigins = process.env.CORS_ORIGIN
+    ? process.env.CORS_ORIGIN.split(',').map((o) => o.trim())
+    : ['http://localhost:3100', 'http://127.0.0.1:3100'];
+  app.enableCors({
+    origin: allowedOrigins,
+    methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization', 'client_id', 'client_secret'],
+    credentials: true,
+  });
+
   const config = app.get(ConfigService);
   const port = config.get<number>('PORT') ?? 3000;
   await app.listen(port);

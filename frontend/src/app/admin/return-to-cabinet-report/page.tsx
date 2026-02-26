@@ -88,7 +88,7 @@ export default function ReturnToCabinetReportPage() {
           toast.success(`พบ ${total} รายการคืนอุปกรณ์เข้าตู้`);
         }
       } else {
-        toast.error(response.message || 'ไม่สามารถโหลดข้อมูลได้');
+        toast.error((response as any)?.error || (response as any)?.message || 'ไม่สามารถโหลดข้อมูลได้');
       }
     } catch (error: any) {
       toast.error(error.response?.data?.message || error.message || 'เกิดข้อผิดพลาดในการโหลดข้อมูล');

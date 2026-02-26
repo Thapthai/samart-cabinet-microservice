@@ -85,7 +85,7 @@ export default function DispenseFromCabinetPage() {
           toast.success(`พบ ${total} รายการเบิกอุปกรณ์`);
         }
       } else {
-        toast.error(response.message || 'ไม่สามารถโหลดข้อมูลได้');
+        toast.error((response as any)?.error || (response as any)?.message || 'ไม่สามารถโหลดข้อมูลได้');
       }
     } catch (error: any) {
       toast.error(error.response?.data?.message || error.message || 'เกิดข้อผิดพลาดในการโหลดข้อมูล');

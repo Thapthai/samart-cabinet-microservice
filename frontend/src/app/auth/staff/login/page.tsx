@@ -58,18 +58,13 @@ export default function StaffLoginPage() {
         <CardHeader className="space-y-4 pb-6">
           {/* Logo */}
           <div className="flex justify-center">
-            <div className="relative">
-              <div className="absolute inset-0 bg-green-600 rounded-full blur-2xl opacity-20 animate-pulse"></div>
-              <div className="relative bg-white rounded-xl p-4 shadow-lg">
-                <img
-                  src={ASSETS.LOGO}
-                  alt="POSE Logo"
-                  width={80}
-                  height={80}
-                  className="object-contain"
-                />
-              </div>
-            </div>
+            <img
+              src={ASSETS.LOGO}
+              alt="POSE Logo"
+              width={80}
+              height={80}
+              className="object-contain"
+            />
           </div>
 
           <div className="text-center space-y-2">

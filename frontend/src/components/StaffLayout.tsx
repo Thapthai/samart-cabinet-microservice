@@ -184,7 +184,7 @@ export default function StaffLayout({ children }: StaffLayoutProps) {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+      <div className="min-h-screen flex items-center justify-center bg-rose-50/50">
         <div className="text-center">
           <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
           <p className="mt-4 text-gray-600">กำลังโหลด...</p>
@@ -198,7 +198,7 @@ export default function StaffLayout({ children }: StaffLayoutProps) {
   }
 
   return (
-    <div className="flex h-screen bg-gray-50 overflow-hidden">
+    <div className="flex h-screen bg-rose-50/30 overflow-hidden">
       <StaffSidebar staffUser={staffUser} onLogout={handleLogout} isAdmin={isAdmin} />
       
       {/* Main Content */}
@@ -250,7 +250,7 @@ export default function StaffLayout({ children }: StaffLayoutProps) {
                 <DropdownMenuTrigger asChild>
                   <Button
                     variant="ghost"
-                    className="flex items-center space-x-2 h-9 px-2 sm:px-3 hover:bg-gray-100"
+                    className="flex items-center space-x-2 h-9 px-2 sm:px-3 hover:bg-pink-50"
                   >
                     <div className="w-8 h-8 rounded-full bg-gradient-to-br from-green-400 via-blue-500 to-purple-600 flex items-center justify-center text-white font-semibold text-xs shadow-md ring-2 ring-white flex-shrink-0">
                       {isAdmin 
@@ -317,7 +317,7 @@ export default function StaffLayout({ children }: StaffLayoutProps) {
         </header>
         
         {/* Main Content Area - เต็มความกว้างเหมือน admin */}
-        <main className="flex-1 overflow-y-auto bg-gray-50" style={{ zoom: zoomLevel / 100 }}>
+        <main className="flex-1 overflow-y-auto bg-rose-50/30" style={{ zoom: zoomLevel / 100 }}>
           <div className="w-full max-w-full px-4 sm:px-6 lg:px-8 py-6">
             {children}
           </div>

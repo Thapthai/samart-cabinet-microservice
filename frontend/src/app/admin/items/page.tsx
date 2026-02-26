@@ -77,13 +77,18 @@ export default function ItemsPage() {
           }
         }
  
-        const response = await itemsApi.getAll(params);
-        const list = Array.isArray(response?.data) ? response.data : (response as any)?.data?.data;
-        if (Array.isArray(list)) {
-          setItems(list);
-          setTotalItems((response as any).total ?? list.length);
-          setTotalPages((response as any).lastPage ?? Math.ceil(((response as any).total ?? list.length) / itemsPerPage));
+        const response = await itemsApi.getAll(params) as { success?: boolean; data?: any[]; total?: number; lastPage?: number };
+        if (response?.success === false) {
+          toast.error((response as any)?.message || 'โหลดข้อมูลไม่สำเร็จ');
+          setItems([]);
+          setTotalItems(0);
+          setTotalPages(1);
+          return;
         }
+        const list = Array.isArray(response?.data) ? response.data : (response as any)?.data?.data ?? [];
+        setItems(list);
+        setTotalItems(response?.total ?? list.length);
+        setTotalPages(response?.lastPage ?? Math.ceil((response?.total ?? list.length) / itemsPerPage));
       }
     } catch (error) {
       console.error('Failed to fetch items:', error);

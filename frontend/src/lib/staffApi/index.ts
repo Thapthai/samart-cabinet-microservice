@@ -2,7 +2,7 @@ import axios from 'axios';
 
 // Create axios instance for staff API
 const staffApi = axios.create({
-    baseURL: process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000/api/v1',
+    baseURL: process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000/smart-cabinet-cu/api/v1',
     headers: {
         'Content-Type': 'application/json',
     },

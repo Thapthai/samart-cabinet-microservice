@@ -102,7 +102,7 @@ export default function ReturnToCabinetPage() {
 
     try {
       setLoading(true);
-      const result: any = await medicalSuppliesApi.returnItemsToCabinet(selectedRowIds);
+      const result: any = await medicalSuppliesApi.returnItemsToCabinet(selectedRowIds, (user as any)?.id ?? 0);
       
       if (result.success) {
         toast.success(result.message || `คืนอุปกรณ์เข้าตู้สำเร็จ ${result.updatedCount} รายการ`);

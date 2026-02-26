@@ -11,6 +11,7 @@ import { ReportServiceModule } from './report/report-service.module';
 import { EmailModule } from './email/email.module';
 import { PrismaModule } from './prisma/prisma.module';
 import { DateTimeModule } from './utils/date-time/date-time.module';
+import { StaffModule } from './staff/staff.module';
 
 @Module({
   imports: [
@@ -27,6 +28,7 @@ import { DateTimeModule } from './utils/date-time/date-time.module';
     MedicalSuppliesModule,
     ReportServiceModule,
     DateTimeModule,
+    StaffModule,
   ],
   controllers: [AppController],
   providers: [AppService],

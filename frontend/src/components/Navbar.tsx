@@ -129,7 +129,7 @@ export default function Navbar() {
                 <DropdownMenuTrigger asChild>
                   <Button
                     variant="ghost"
-                    className="flex items-center space-x-2 h-9 px-2 sm:px-3 hover:bg-gray-100"
+                    className="flex items-center space-x-2 h-9 px-2 sm:px-3 hover:bg-pink-50"
                   >
                     <div className="w-8 h-8 rounded-full bg-gradient-to-br from-green-400 via-blue-500 to-purple-600 flex items-center justify-center text-white font-semibold text-xs shadow-md ring-2 ring-white flex-shrink-0">
                       {(user?.name?.charAt(0) || user?.email?.charAt(0) || 'U').toUpperCase()}

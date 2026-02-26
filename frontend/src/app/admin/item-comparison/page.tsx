@@ -83,11 +83,9 @@ export default function ItemComparisonPage() {
       }
       if (activeFilters.departmentCode) params.departmentCode = activeFilters.departmentCode;
 
-      const response = await medicalSuppliesApi.compareDispensedVsUsage(params);
+      const response = await medicalSuppliesApi.compareDispensedVsUsage(params) as { success?: boolean; data?: any; message?: string; error?: string };
 
-      console.log(response);
-
-      if (response.success || response.data) {
+      if (response?.success || response?.data) {
         const responseData: any = response.data || response;
         
         // API now returns { data, pagination, filters }
@@ -127,7 +125,7 @@ export default function ItemComparisonPage() {
           toast.success(`พบ ${paginationData.total || comparisonData.length} รายการเปรียบเทียบ`);
         }
       } else {
-        toast.error(response.message || 'ไม่สามารถโหลดข้อมูลได้');
+        toast.error((response as any)?.error || (response as any)?.message || 'ไม่สามารถโหลดข้อมูลได้');
       }
     } catch (error: any) {
       toast.error(error.response?.data?.message || error.message || 'เกิดข้อผิดพลาดในการโหลดข้อมูล');

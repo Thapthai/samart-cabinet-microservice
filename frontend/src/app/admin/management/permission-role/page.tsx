@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { useRouter } from "next/navigation";
 import ProtectedRoute from "@/components/ProtectedRoute";
 import AppLayout from "@/components/AppLayout";
 import { staffRolePermissionApi, staffRoleApi } from "@/lib/api";
@@ -25,7 +24,7 @@ import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Shield, Save, Loader2, CornerDownRight } from "lucide-react";
 import { toast } from "sonner";
-import { staffMenuItems, StaffMenuSubItem } from '@/app/staff/menus';
+import { staffMenuItems, type StaffMenuSubItem } from "@/app/staff/menus";
 
 
 // Flatten staffMenuItems (and submenus) from menus.ts for permission table
@@ -65,7 +64,6 @@ interface Permission {
 }
 
 export default function ManageStaffRolesPage() {
-  const router = useRouter();
   const [permissions, setPermissions] = useState<
     Record<string, Record<string, boolean>>
   >({});
@@ -93,42 +91,45 @@ export default function ManageStaffRolesPage() {
       // Set menu items
       setMenuItems(getMenuItems());
 
-      // Set roles
-      if (rolesResponse.success && rolesResponse.data) {
-        const activeRoles = (rolesResponse.data as Role[]).filter(
-          (role) => role.is_active
-        );
-        setRoles(activeRoles);
+      // Set roles (support both success+data and plain array from backend)
+      const rolesData = Array.isArray(rolesResponse?.data)
+        ? rolesResponse.data
+        : (rolesResponse as any)?.success !== false && (rolesResponse as any)?.data
+          ? (rolesResponse as any).data
+          : [];
+      const activeRoles = (rolesData as Role[]).filter((r) => r.is_active !== false);
+      setRoles(activeRoles);
 
-        // Initialize permissions map
-        const permissionsMap: Record<string, Record<string, boolean>> = {};
-
-        // Initialize all roles with all menus as false
-        activeRoles.forEach((role) => {
-          permissionsMap[role.code] = {};
-          getMenuItems().forEach((menu) => {
-            permissionsMap[role.code][menu.value] = false;
-          });
+      // Initialize permissions map: all roles × all menus = false
+      const permissionsMap: Record<string, Record<string, boolean>> = {};
+      activeRoles.forEach((role) => {
+        permissionsMap[role.code] = {};
+        getMenuItems().forEach((menu) => {
+          permissionsMap[role.code][menu.value] = false;
         });
+      });
 
-        // Set permissions from API
-        if (permissionsResponse.success && permissionsResponse.data) {
-          (permissionsResponse.data as Permission[]).forEach((perm) => {
-            const roleCode = perm.role_code || perm.role?.code;
-            if (
-              roleCode &&
-              permissionsMap[roleCode] &&
-              permissionsMap[roleCode][perm.menu_href] !== undefined
-            ) {
-              permissionsMap[roleCode][perm.menu_href] = perm.can_access;
-            }
-          });
+      // Override from API
+      const permsData = Array.isArray(permissionsResponse?.data)
+        ? permissionsResponse.data
+        : (permissionsResponse as any)?.success !== false && (permissionsResponse as any)?.data
+          ? (permissionsResponse as any).data
+          : [];
+      (permsData as Permission[]).forEach((perm) => {
+        const roleCode = perm.role_code ?? (perm as any).role?.code;
+        if (
+          roleCode &&
+          permissionsMap[roleCode] &&
+          permissionsMap[roleCode][perm.menu_href] !== undefined
+        ) {
+          permissionsMap[roleCode][perm.menu_href] = perm.can_access;
         }
+      });
 
-        setPermissions(permissionsMap);
-      } else {
-        toast.error(rolesResponse.message || "ไม่สามารถโหลดข้อมูล Roles ได้");
-        initializeDefaultPermissions();
+      setPermissions(permissionsMap);
+
+      if (!rolesData.length && (rolesResponse as any)?.success === false) {
+        toast.error((rolesResponse as any)?.message ?? (rolesResponse as any)?.error ?? "ไม่สามารถโหลดข้อมูล Roles ได้");
       }
     } catch (error: any) {
       console.error("Load data error:", error);
@@ -194,17 +195,14 @@ export default function ManageStaffRolesPage() {
         });
       });
 
-      const response = await staffRolePermissionApi.bulkUpdate(
+      const response = (await staffRolePermissionApi.bulkUpdate(
         permissionsArray
-      );
-      if (response.success) {
+      )) as { success?: boolean; message?: string; error?: string };
+      if (response?.success) {
         toast.success("บันทึกการกำหนดสิทธิ์เรียบร้อยแล้ว");
-        // Refresh the entire page to update sidemenu with new permissions
-        setTimeout(() => {
-          window.location.reload();
-        }, 500); // Small delay to show success message
+        setTimeout(() => window.location.reload(), 500);
       } else {
-        toast.error(response.message || "ไม่สามารถบันทึกข้อมูลได้");
+        toast.error((response as any)?.error ?? (response as any)?.message ?? "ไม่สามารถบันทึกข้อมูลได้");
       }
     } catch (error: any) {
       toast.error(error.message || "ไม่สามารถเชื่อมต่อกับเซิร์ฟเวอร์");
@@ -240,15 +238,22 @@ export default function ManageStaffRolesPage() {
   return (
     <ProtectedRoute>
       <AppLayout fullWidth>
-        <div className="mb-6">
-          <h2 className="text-2xl font-bold text-gray-800">กำหนดสิทธิ์</h2>
-          <p className="text-gray-600 mt-1">
-            กำหนดสิทธิ์การเข้าถึงเมนูตามบทบาท (Role)
-          </p>
-        </div>
+        <div className="space-y-6">
+          {/* Header - aligned with other admin pages */}
+          <div className="flex items-center space-x-3">
+            <div className="p-2 bg-violet-100 rounded-lg">
+              <Shield className="h-6 w-6 text-violet-600" />
+            </div>
+            <div>
+              <h1 className="text-2xl font-bold text-gray-900">กำหนดสิทธิ์</h1>
+              <p className="text-sm text-gray-500 mt-1">
+                กำหนดสิทธิ์การเข้าถึงเมนูตามบทบาท (Role)
+              </p>
+            </div>
+          </div>
 
-        {/* Permissions Table */}
-        <Card className="mb-6">
+          {/* Permissions Table */}
+          <Card>
           <CardHeader>
             <div className="flex items-center justify-between">
               <div>
@@ -335,33 +340,32 @@ export default function ManageStaffRolesPage() {
           </CardContent>
         </Card>
 
-        {/* Info Card */}
-        <Card>
-          <CardHeader>
-            <CardTitle>ข้อมูลการใช้งาน</CardTitle>
-            <CardDescription>
-              หน้านี้สำหรับกำหนดสิทธิ์การเข้าถึงเมนูตามบทบาท
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-2">
-              <p className="text-sm text-gray-600">
-                • <strong>IT 1:</strong> เห็นทุกเมนู
-                รวมถึงเมนูจัดการสิทธิ์และกำหนดสิทธิ์
-              </p>
-              <p className="text-sm text-gray-600">
-                • <strong>IT 2, IT 3, Warehouse 1-3:</strong> เห็นทุกเมนู
-                ยกเว้นเมนูจัดการสิทธิ์และกำหนดสิทธิ์ (สามารถกำหนดเองได้)
-              </p>
-              <p className="text-sm text-gray-600">
-                • สามารถเปิด/ปิดสิทธิ์การเข้าถึงเมนูแต่ละเมนูได้
-              </p>
-              <p className="text-sm text-gray-600">
-                • คลิก <strong>บันทึก</strong> เพื่อบันทึกการเปลี่ยนแปลง
-              </p>
-            </div>
-          </CardContent>
-        </Card>
+          {/* Info Card */}
+          <Card>
+            <CardHeader>
+              <CardTitle>ข้อมูลการใช้งาน</CardTitle>
+              <CardDescription>
+                หน้านี้สำหรับกำหนดสิทธิ์การเข้าถึงเมนูตามบทบาท
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-2">
+                <p className="text-sm text-gray-600">
+                  • <strong>IT 1:</strong> เห็นทุกเมนู รวมถึงเมนูจัดการสิทธิ์และกำหนดสิทธิ์
+                </p>
+                <p className="text-sm text-gray-600">
+                  • <strong>IT 2, IT 3, Warehouse 1-3:</strong> เห็นทุกเมนู ยกเว้นเมนูจัดการสิทธิ์และกำหนดสิทธิ์ (สามารถกำหนดเองได้)
+                </p>
+                <p className="text-sm text-gray-600">
+                  • สามารถเปิด/ปิดสิทธิ์การเข้าถึงเมนูแต่ละเมนูได้
+                </p>
+                <p className="text-sm text-gray-600">
+                  • คลิก <strong>บันทึก</strong> เพื่อบันทึกการเปลี่ยนแปลง
+                </p>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
       </AppLayout>
     </ProtectedRoute>
   );

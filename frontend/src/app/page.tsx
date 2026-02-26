@@ -37,18 +37,13 @@ export default function HomePage() {
               <div className="text-center">
                 {/* Logo */}
                 <div className="flex justify-center mb-8">
-                  <div className="relative">
-                    <div className="absolute inset-0 bg-blue-600 rounded-full blur-3xl opacity-20 animate-pulse"></div>
-                    <div className="relative bg-white rounded-2xl p-6 shadow-2xl">
-                      <img
-                        src={ASSETS.LOGO}
-                        alt="POSE Logo"
-                        width={120}
-                        height={120}
-                        className="object-contain"
-                      />
-                    </div>
-                  </div>
+                  <img
+                    src={ASSETS.LOGO}
+                    alt="POSE Logo"
+                    width={120}
+                    height={120}
+                    className="object-contain"
+                  />
                 </div>
 
                 <h1 className="text-4xl tracking-tight font-extrabold text-gray-900 sm:text-5xl md:text-6xl">

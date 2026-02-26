@@ -33,7 +33,7 @@ export default function AppLayout({ children, fullWidth }: AppLayoutProps) {
   }, [zoomLevel]);
 
   return (
-    <div className="flex h-screen bg-gray-50">
+    <div className="flex h-screen bg-rose-50/30">
       <Sidebar isCollapsed={isCollapsed} setIsCollapsed={setIsCollapsed} />
       
       {/* Main Content - ขยายตามขนาด Sidebar */}

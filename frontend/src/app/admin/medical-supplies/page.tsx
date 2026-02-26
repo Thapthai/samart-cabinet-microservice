@@ -113,6 +113,13 @@ export default function MedicalSuppliesPage() {
 
       const response: any = await medicalSuppliesApi.getAll(params);
 
+      if (response?.success === false) {
+        toast.error(response.message || 'โหลดข้อมูลไม่สำเร็จ');
+        setSupplies([]);
+        setTotalPages(1);
+        setTotalItems(0);
+        return;
+      }
       if (response && response.data) {
         let dataArray: any[] = [];
 

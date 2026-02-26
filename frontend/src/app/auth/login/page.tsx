@@ -189,18 +189,13 @@ export default function LoginPage() {
         <Card className="w-full max-w-md shadow-2xl border-0 bg-white/80 backdrop-blur-sm">
           <CardHeader className="text-center space-y-2 pb-8">
             <div className="flex justify-center mb-4">
-              <div className="relative">
-                <div className="absolute inset-0 bg-blue-600 rounded-full blur-2xl opacity-20 animate-pulse"></div>
-                <div className="relative bg-white rounded-xl p-3 shadow-lg">
-                  <img
-                    src={ASSETS.LOGO}
-                    alt="POSE Logo"
-                    width={80}
-                    height={80}
-                    className="object-contain"
-                  />
-                </div>
-              </div>
+              <img
+                src={ASSETS.LOGO}
+                alt="POSE Logo"
+                width={80}
+                height={80}
+                className="object-contain"
+              />
             </div>
             <CardTitle className="text-3xl font-bold bg-gradient-to-r from-blue-600 to-cyan-600 bg-clip-text text-transparent">
               เข้าสู่ระบบ

@@ -6,7 +6,7 @@ import type { Item, CreateItemDto, UpdateItemDto, GetItemsQuery } from '@/types/
 
 // Create axios instance
 const api = axios.create({
-  baseURL: process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000/api/v1',
+  baseURL: process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000/smart-cabinet-cu/api/v1',
   headers: {
     'Content-Type': 'application/json',
   },
@@ -105,13 +105,13 @@ export const authApi = {
   },
 
   loginWith2FA: async (tempToken: string, code: string, type?: string): Promise<ApiResponse<AuthResponse>> => {
-    const response = await api.post('/auth/login/2fa', { tempToken, code, type });
+    const response = await api.post('/auth/2fa/login', { tempToken, code, type });
     return response.data;
   },
 
-  // User Management APIs
+  // User Management APIs — backend: GET/PATCH /auth/profile, PATCH /auth/change-password
   getUserProfile: async (): Promise<ApiResponse<User>> => {
-    const response = await api.get('/auth/user/profile');
+    const response = await api.get('/auth/profile');
     return response.data;
   },
 
@@ -121,7 +121,15 @@ export const authApi = {
     preferredAuthMethod?: string;
     currentPassword: string;
   }): Promise<ApiResponse<User>> => {
-    const response = await api.put('/auth/user/profile', data);
+    const body: Record<string, unknown> = {
+      name: data.name,
+      email: data.email,
+      currentPassword: data.currentPassword,
+    };
+    if (data.preferredAuthMethod !== undefined) {
+      body.preferred_auth_method = data.preferredAuthMethod;
+    }
+    const response = await api.patch('/auth/profile', body);
     return response.data;
   },
 
@@ -130,7 +138,7 @@ export const authApi = {
     newPassword: string;
     confirmPassword: string;
   }): Promise<ApiResponse> => {
-    const response = await api.post('/auth/user/change-password', data);
+    const response = await api.patch('/auth/change-password', data);
     return response.data;
   },
 
@@ -245,9 +253,10 @@ export const itemsApi = {
 };
 
 // =========================================== Medical Supplies API ===========================================
+// Backend: medical-supply-usages (list/create/get/update/delete), medical-supply-items (by-usage, return, dispense, record-stock-returns), medical-supply (dispensed/returned items, compare, usage-by-item-code)
 export const medicalSuppliesApi = {
   create: async (data: any): Promise<ApiResponse<any>> => {
-    const response = await api.post('/medical-supplies', data);
+    const response = await api.post('/medical-supply-usages', data);
     return response.data;
   },
 
@@ -271,17 +280,17 @@ export const medicalSuppliesApi = {
     print_date?: string;       // วันที่พิมพ์บิล
     time_print_date?: string;  // เวลาที่พิมพ์บิล
   }): Promise<PaginatedResponse<any>> => {
-    const response = await api.get('/medical-supplies', { params: query });
+    const response = await api.get('/medical-supply-usages', { params: query });
     return response.data;
   },
 
   getById: async (id: number): Promise<ApiResponse<any>> => {
-    const response = await api.get(`/medical-supplies/${id}`);
+    const response = await api.get(`/medical-supply-usages/${id}`);
     return response.data;
   },
 
   update: async (id: number, data: any): Promise<ApiResponse<any>> => {
-    const response = await api.put(`/medical-supplies/${id}`, data);
+    const response = await api.put(`/medical-supply-usages/${id}`, data);
     return response.data;
   },
 
@@ -290,17 +299,17 @@ export const medicalSuppliesApi = {
     print_date?: Date;
     time_print_date?: Date;
   }): Promise<ApiResponse<any>> => {
-    const response = await api.patch(`/medical-supplies/${id}/print-info`, data);
+    const response = await api.patch(`/medical-supply-usages/${id}/print-info`, data);
     return response.data;
   },
 
   delete: async (id: number): Promise<ApiResponse> => {
-    const response = await api.delete(`/medical-supplies/${id}`);
+    const response = await api.delete(`/medical-supply-usages/${id}`);
     return response.data;
   },
 
   getStatistics: async (): Promise<ApiResponse<any>> => {
-    const response = await api.get('/medical-supplies/statistics/all');
+    const response = await api.get('/medical-supply-usages/statistics');
     return response.data;
   },
 
@@ -314,7 +323,7 @@ export const medicalSuppliesApi = {
     startDate?: string;
     endDate?: string;
   }): Promise<{ success: boolean; data: any[]; total: number; page: number; limit: number; totalPages: number }> => {
-    const response = await api.get('/medical-supplies/logs', { params: query });
+    const response = await api.get('/medical-supply-usages/logs', { params: query });
     return response.data;
   },
 
@@ -325,7 +334,7 @@ export const medicalSuppliesApi = {
   },
 
   getSupplyItemsByUsageId: async (usageId: number): Promise<ApiResponse<any>> => {
-    const response = await api.get(`/medical-supply-items/usage/${usageId}`);
+    const response = await api.get(`/medical-supply-items/by-usage/${usageId}`);
     return response.data;
   },
 
@@ -390,21 +399,27 @@ export const medicalSuppliesApi = {
     if (filters?.endDate) queryParams.append('endDate', filters.endDate);
     if (filters?.page) queryParams.append('page', filters.page.toString());
     if (filters?.limit) queryParams.append('limit', filters.limit.toString());
-    const response = await api.get(`/medical-supply-items/return-to-cabinet?${queryParams.toString()}`);
+    const response = await api.get(`/medical-supply-items/for-return-to-cabinet?${queryParams.toString()}`);
     return response.data;
   },
 
   recordStockReturn: async (data: {
     items: Array<{ item_stock_id: number; return_reason: string; return_note?: string }>;
-    return_by_user_id?: string;
+    return_by_user_id: string;
     stock_id?: number;
   }): Promise<ApiResponse<any>> => {
-    const response = await api.post('/medical-supply-items/record-stock-return', data);
+    const response = await api.post('/medical-supply-items/record-stock-returns', {
+      ...data,
+      return_by_user_id: data.return_by_user_id || 'admin',
+    });
     return response.data;
   },
 
-  returnItemsToCabinet: async (rowIds: number[]): Promise<ApiResponse<any>> => {
-    const response = await api.post('/medical-supply-items/return-to-cabinet', { rowIds });
+  returnItemsToCabinet: async (rowIds: number[], userId?: number): Promise<ApiResponse<any>> => {
+    const response = await api.post('/medical-supply-items/return-to-cabinet', {
+      rowIds,
+      userId: userId ?? 0,
+    });
     return response.data;
   },
 
@@ -425,12 +440,15 @@ export const medicalSuppliesApi = {
     if (filters?.endDate) queryParams.append('endDate', filters.endDate);
     if (filters?.page) queryParams.append('page', filters.page.toString());
     if (filters?.limit) queryParams.append('limit', filters.limit.toString());
-    const response = await api.get(`/medical-supply-items/dispense-from-cabinet?${queryParams.toString()}`);
+    const response = await api.get(`/medical-supply-items/for-dispense-from-cabinet?${queryParams.toString()}`);
     return response.data;
   },
 
-  dispenseItemsFromCabinet: async (rowIds: number[]): Promise<ApiResponse<any>> => {
-    const response = await api.post('/medical-supply-items/dispense-from-cabinet', { rowIds });
+  dispenseItemsFromCabinet: async (rowIds: number[], userId?: number): Promise<ApiResponse<any>> => {
+    const response = await api.post('/medical-supply-items/dispense-from-cabinet', {
+      rowIds,
+      userId: userId ?? 0,
+    });
     return response.data;
   },
 
@@ -441,16 +459,18 @@ export const medicalSuppliesApi = {
     endDate?: string;
     page?: number;
     limit?: number;
+    departmentId?: string;
+    cabinetId?: string;
     departmentCode?: string;
     cabinetCode?: string;
   }): Promise<ApiResponse<any>> => {
-    const response = await api.get('/medical-supply-items/returned-items', { params: query });
+    const response = await api.get('/medical-supply/returned-items', { params: query });
     return response.data;
   },
 
   getQuantityStatistics: async (departmentCode?: string): Promise<ApiResponse<any>> => {
     const params = departmentCode ? { department_code: departmentCode } : {};
-    const response = await api.get('/medical-supply-items/statistics', { params });
+    const response = await api.get('/medical-supply-items/quantity-statistics', { params });
     return response.data;
   },
 
@@ -469,11 +489,11 @@ export const medicalSuppliesApi = {
     limit?: number;
     totalPages?: number;
   }> => {
-    const response = await api.get('/medical-supplies-dispensed-items', { params: query });
+    const response = await api.get('/medical-supply/dispensed-items', { params: query });
     return response.data;
   },
 
-  /** ดาวน์โหลดรายงานเบิกจากตู้ (Excel/PDF) โดยไม่เปิดแท็บใหม่ */
+  /** ดาวน์โหลดรายงานเบิกจากตู้ (Excel/PDF) — Backend POST /reports/dispensed-items/excel|pdf returns JSON { success, data: { buffer (base64), filename, contentType } } */
   downloadDispensedItemsExcel: async (params?: {
     keyword?: string;
     startDate?: string;
@@ -481,20 +501,24 @@ export const medicalSuppliesApi = {
     departmentId?: string;
     cabinetId?: string;
   }): Promise<void> => {
-    const queryParams = new URLSearchParams();
-    if (params?.keyword) queryParams.append('keyword', params.keyword);
-    if (params?.startDate) queryParams.append('startDate', params.startDate);
-    if (params?.endDate) queryParams.append('endDate', params.endDate);
-    if (params?.departmentId) queryParams.append('departmentId', params.departmentId);
-    if (params?.cabinetId) queryParams.append('cabinetId', params.cabinetId);
-    const response = await api.get(
-      `/medical-supplies-dispensed-items/export/excel?${queryParams.toString()}`,
-      { responseType: 'blob' },
-    );
-    const url = window.URL.createObjectURL(new Blob([response.data]));
+    const body = {
+      keyword: params?.keyword,
+      startDate: params?.startDate,
+      endDate: params?.endDate,
+      departmentId: params?.departmentId,
+      cabinetId: params?.cabinetId,
+    };
+    const response = await api.post('/reports/dispensed-items/excel', body);
+    const res = response.data as { success?: boolean; data?: { buffer?: string; filename?: string; contentType?: string } };
+    if (!res?.success || !res?.data?.buffer) throw new Error((res as any)?.error || 'ไม่สามารถสร้างไฟล์ได้');
+    const binary = atob(res.data.buffer);
+    const bytes = new Uint8Array(binary.length);
+    for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
+    const blob = new Blob([bytes], { type: res.data.contentType || 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+    const url = window.URL.createObjectURL(blob);
     const link = document.createElement('a');
     link.href = url;
-    link.setAttribute('download', `dispensed_items_${new Date().toISOString().split('T')[0]}.xlsx`);
+    link.setAttribute('download', res.data.filename || `dispensed_items_${new Date().toISOString().split('T')[0]}.xlsx`);
     document.body.appendChild(link);
     link.click();
     link.remove();
@@ -508,20 +532,24 @@ export const medicalSuppliesApi = {
     departmentId?: string;
     cabinetId?: string;
   }): Promise<void> => {
-    const queryParams = new URLSearchParams();
-    if (params?.keyword) queryParams.append('keyword', params.keyword);
-    if (params?.startDate) queryParams.append('startDate', params.startDate);
-    if (params?.endDate) queryParams.append('endDate', params.endDate);
-     if (params?.departmentId) queryParams.append('departmentId', params.departmentId);
-     if (params?.cabinetId) queryParams.append('cabinetId', params.cabinetId);
-    const response = await api.get(
-      `/medical-supplies-dispensed-items/export/pdf?${queryParams.toString()}`,
-      { responseType: 'blob' },
-    );
-    const url = window.URL.createObjectURL(new Blob([response.data]));
+    const body = {
+      keyword: params?.keyword,
+      startDate: params?.startDate,
+      endDate: params?.endDate,
+      departmentId: params?.departmentId,
+      cabinetId: params?.cabinetId,
+    };
+    const response = await api.post('/reports/dispensed-items/pdf', body);
+    const res = response.data as { success?: boolean; data?: { buffer?: string; filename?: string; contentType?: string } };
+    if (!res?.success || !res?.data?.buffer) throw new Error((res as any)?.error || 'ไม่สามารถสร้างไฟล์ได้');
+    const binary = atob(res.data.buffer);
+    const bytes = new Uint8Array(binary.length);
+    for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
+    const blob = new Blob([bytes], { type: res.data.contentType || 'application/pdf' });
+    const url = window.URL.createObjectURL(blob);
     const link = document.createElement('a');
     link.href = url;
-    link.setAttribute('download', `dispensed_items_${new Date().toISOString().split('T')[0]}.pdf`);
+    link.setAttribute('download', res.data.filename || `dispensed_items_${new Date().toISOString().split('T')[0]}.pdf`);
     document.body.appendChild(link);
     link.click();
     link.remove();
@@ -538,20 +566,20 @@ export const medicalSuppliesApi = {
     page?: number;
     limit?: number;
   }): Promise<ApiResponse<any>> => {
-    const response = await api.get('/medical-supplies-comparison', { params: query });
+    const response = await api.get('/medical-supply/compare-dispensed-vs-usage', { params: query });
     return response.data;
   },
 
-  /** สรุปโดยรวม: จำนวนเบิก, จำนวนใช้, ผลต่าง (สำหรับ Dashboard) */
+  /** สรุปโดยรวม: จำนวนเบิก, จำนวนใช้, ผลต่าง (สำหรับ Dashboard) — backend: medical-supply/dispensed-vs-usage-summary */
   getDispensedVsUsageSummary: async (params?: {
     startDate?: string;
     endDate?: string;
   }): Promise<ApiResponse<{ total_dispensed: number; total_used: number; difference: number }>> => {
-    const response = await api.get('/medical-supplies-comparison/summary', { params });
+    const response = await api.get('/medical-supply/dispensed-vs-usage-summary', { params });
     return response.data;
   },
 
-  /** ดาวน์โหลดรายงานเปรียบเทียบการเบิกและใช้ (Excel/PDF) โดยไม่เปิดแท็บใหม่ */
+  /** ดาวน์โหลดรายงานเปรียบเทียบการเบิกและใช้ — Backend POST /reports/item-comparison/excel|pdf returns JSON { success, data: { buffer, filename, contentType } } */
   downloadMedicalSuppliesComparisonExcel: async (params?: {
     itemCode?: string;
     itemTypeId?: number;
@@ -560,21 +588,25 @@ export const medicalSuppliesApi = {
     departmentCode?: string;
     includeUsageDetails?: boolean | string;
   }): Promise<void> => {
-    const queryParams = new URLSearchParams();
-    if (params?.itemCode) queryParams.append('itemCode', params.itemCode);
-    if (params?.itemTypeId != null) queryParams.append('itemTypeId', String(params.itemTypeId));
-    if (params?.startDate) queryParams.append('startDate', params.startDate);
-    if (params?.endDate) queryParams.append('endDate', params.endDate);
-    if (params?.departmentCode) queryParams.append('departmentCode', params.departmentCode);
-    if (params?.includeUsageDetails !== undefined) queryParams.append('includeUsageDetails', String(params.includeUsageDetails));
-    const response = await api.get(
-      `/medical-supplies-comparison/export/excel?${queryParams.toString()}`,
-      { responseType: 'blob' },
-    );
-    const url = window.URL.createObjectURL(new Blob([response.data]));
+    const body = {
+      itemCode: params?.itemCode,
+      itemTypeId: params?.itemTypeId,
+      startDate: params?.startDate,
+      endDate: params?.endDate,
+      departmentCode: params?.departmentCode,
+      includeUsageDetails: params?.includeUsageDetails === true || params?.includeUsageDetails === 'true',
+    };
+    const response = await api.post('/reports/item-comparison/excel', body);
+    const res = response.data as { success?: boolean; data?: { buffer?: string; filename?: string; contentType?: string } };
+    if (!res?.success || !res?.data?.buffer) throw new Error((res as any)?.error || 'ไม่สามารถสร้างไฟล์ได้');
+    const binary = atob(res.data.buffer);
+    const bytes = new Uint8Array(binary.length);
+    for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
+    const blob = new Blob([bytes], { type: res.data.contentType || 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+    const url = window.URL.createObjectURL(blob);
     const link = document.createElement('a');
     link.href = url;
-    link.setAttribute('download', `medical_supplies_comparison_${new Date().toISOString().split('T')[0]}.xlsx`);
+    link.setAttribute('download', res.data.filename || `medical_supplies_comparison_${new Date().toISOString().split('T')[0]}.xlsx`);
     document.body.appendChild(link);
     link.click();
     link.remove();
@@ -589,21 +621,25 @@ export const medicalSuppliesApi = {
     departmentCode?: string;
     includeUsageDetails?: boolean | string;
   }): Promise<void> => {
-    const queryParams = new URLSearchParams();
-    if (params?.itemCode) queryParams.append('itemCode', params.itemCode);
-    if (params?.itemTypeId != null) queryParams.append('itemTypeId', String(params.itemTypeId));
-    if (params?.startDate) queryParams.append('startDate', params.startDate);
-    if (params?.endDate) queryParams.append('endDate', params.endDate);
-    if (params?.departmentCode) queryParams.append('departmentCode', params.departmentCode);
-    if (params?.includeUsageDetails !== undefined) queryParams.append('includeUsageDetails', String(params.includeUsageDetails));
-    const response = await api.get(
-      `/medical-supplies-comparison/export/pdf?${queryParams.toString()}`,
-      { responseType: 'blob' },
-    );
-    const url = window.URL.createObjectURL(new Blob([response.data]));
+    const body = {
+      itemCode: params?.itemCode,
+      itemTypeId: params?.itemTypeId,
+      startDate: params?.startDate,
+      endDate: params?.endDate,
+      departmentCode: params?.departmentCode,
+      includeUsageDetails: params?.includeUsageDetails === true || params?.includeUsageDetails === 'true',
+    };
+    const response = await api.post('/reports/item-comparison/pdf', body);
+    const res = response.data as { success?: boolean; data?: { buffer?: string; filename?: string; contentType?: string } };
+    if (!res?.success || !res?.data?.buffer) throw new Error((res as any)?.error || 'ไม่สามารถสร้างไฟล์ได้');
+    const binary = atob(res.data.buffer);
+    const bytes = new Uint8Array(binary.length);
+    for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
+    const blob = new Blob([bytes], { type: res.data.contentType || 'application/pdf' });
+    const url = window.URL.createObjectURL(blob);
     const link = document.createElement('a');
     link.href = url;
-    link.setAttribute('download', `medical_supplies_comparison_${new Date().toISOString().split('T')[0]}.pdf`);
+    link.setAttribute('download', res.data.filename || `medical_supplies_comparison_${new Date().toISOString().split('T')[0]}.pdf`);
     document.body.appendChild(link);
     link.click();
     link.remove();
@@ -649,7 +685,7 @@ export const medicalSuppliesApi = {
     page?: number;
     limit?: number;
   }): Promise<ApiResponse<any>> => {
-    const response = await api.get('/medical-supplies-usage-by-item-code', { params: query });
+    const response = await api.get('/medical-supply/usage-by-item-code-from-item-table', { params: query });
     return response.data;
   },
 
@@ -673,7 +709,7 @@ export const medicalSuppliesApi = {
       item_status?: string; // Status = Verified สำหรับรายการใหม่
     }>;
   }): Promise<ApiResponse<any>> => {
-    const response = await api.post('/medical-supplies/cancel-bill/cross-day', data);
+    const response = await api.post('/medical-supply/handle-cross-day-cancel-bill', data);
     return response.data;
   },
 
@@ -691,7 +727,7 @@ export const medicalSuppliesApi = {
       item_status?: string;
     }>;
   }): Promise<ApiResponse<any>> => {
-    const response = await api.post('/medical-supplies/cancel-bill', data);
+    const response = await api.post('/medical-supply/handle-cancel-bill', data);
     return response.data;
   },
 };
@@ -908,6 +944,7 @@ export const vendingReportsApi = {
     link.click();
     link.remove();
   },
+  /** Backend POST /reports/return-to-cabinet/excel|pdf returns JSON { success, buffer (base64), contentType, filename } */
   downloadReturnToCabinetReportExcel: async (params?: {
     keyword?: string;
     itemTypeId?: number;
@@ -916,23 +953,29 @@ export const vendingReportsApi = {
     departmentId?: string;
     cabinetId?: string;
   }): Promise<void> => {
-    const queryParams = new URLSearchParams();
-    if (params?.keyword) queryParams.append('keyword', params.keyword);
-    if (params?.itemTypeId) queryParams.append('itemTypeId', params.itemTypeId.toString());
-    if (params?.startDate) queryParams.append('startDate', params.startDate);
-    if (params?.endDate) queryParams.append('endDate', params.endDate);
-    if (params?.departmentId) queryParams.append('departmentId', params.departmentId);
-    if (params?.cabinetId) queryParams.append('cabinetId', params.cabinetId);
-    const response = await api.get(`/reports/return-to-cabinet/excel?${queryParams.toString()}`, {
-      responseType: 'blob',
-    });
-    const url = window.URL.createObjectURL(new Blob([response.data]));
+    const body = {
+      keyword: params?.keyword,
+      itemTypeId: params?.itemTypeId,
+      startDate: params?.startDate,
+      endDate: params?.endDate,
+      departmentId: params?.departmentId,
+      cabinetId: params?.cabinetId,
+    };
+    const response = await api.post('/reports/return-to-cabinet/excel', body);
+    const res = response.data as { success?: boolean; buffer?: string; contentType?: string; filename?: string };
+    if (!res?.success || !res?.buffer) throw new Error((res as any)?.error || 'ไม่สามารถสร้างไฟล์ได้');
+    const binary = atob(res.buffer);
+    const bytes = new Uint8Array(binary.length);
+    for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
+    const blob = new Blob([bytes], { type: res.contentType || 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+    const url = window.URL.createObjectURL(blob);
     const link = document.createElement('a');
     link.href = url;
-    link.setAttribute('download', `return_to_cabinet_report_${new Date().toISOString().split('T')[0]}.xlsx`);
+    link.setAttribute('download', res.filename || `return_to_cabinet_report_${new Date().toISOString().split('T')[0]}.xlsx`);
     document.body.appendChild(link);
     link.click();
     link.remove();
+    window.URL.revokeObjectURL(url);
   },
   downloadReturnToCabinetReportPdf: async (params?: {
     keyword?: string;
@@ -942,23 +985,29 @@ export const vendingReportsApi = {
     departmentId?: string;
     cabinetId?: string;
   }): Promise<void> => {
-    const queryParams = new URLSearchParams();
-    if (params?.keyword) queryParams.append('keyword', params.keyword);
-    if (params?.itemTypeId) queryParams.append('itemTypeId', params.itemTypeId.toString());
-    if (params?.startDate) queryParams.append('startDate', params.startDate);
-    if (params?.endDate) queryParams.append('endDate', params.endDate);
-    if (params?.departmentId) queryParams.append('departmentId', params.departmentId);
-    if (params?.cabinetId) queryParams.append('cabinetId', params.cabinetId);
-    const response = await api.get(`/reports/return-to-cabinet/pdf?${queryParams.toString()}`, {
-      responseType: 'blob',
-    });
-    const url = window.URL.createObjectURL(new Blob([response.data]));
+    const body = {
+      keyword: params?.keyword,
+      itemTypeId: params?.itemTypeId,
+      startDate: params?.startDate,
+      endDate: params?.endDate,
+      departmentId: params?.departmentId,
+      cabinetId: params?.cabinetId,
+    };
+    const response = await api.post('/reports/return-to-cabinet/pdf', body);
+    const res = response.data as { success?: boolean; buffer?: string; contentType?: string; filename?: string };
+    if (!res?.success || !res?.buffer) throw new Error((res as any)?.error || 'ไม่สามารถสร้างไฟล์ได้');
+    const binary = atob(res.buffer);
+    const bytes = new Uint8Array(binary.length);
+    for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
+    const blob = new Blob([bytes], { type: res.contentType || 'application/pdf' });
+    const url = window.URL.createObjectURL(blob);
     const link = document.createElement('a');
     link.href = url;
-    link.setAttribute('download', `return_to_cabinet_report_${new Date().toISOString().split('T')[0]}.pdf`);
+    link.setAttribute('download', res.filename || `return_to_cabinet_report_${new Date().toISOString().split('T')[0]}.pdf`);
     document.body.appendChild(link);
     link.click();
     link.remove();
+    window.URL.revokeObjectURL(url);
   },
 };
 
@@ -1060,19 +1109,24 @@ export const reportsApi = {
     return response.data;
   },
 
-  // Cabinet Stock Report (รายงานสต๊อกอุปกรณ์ในตู้)
+  // Cabinet Stock Report (รายงานสต๊อกอุปกรณ์ในตู้) — Backend POST /reports/cabinet-stock/excel|pdf returns JSON { success, data: { buffer, filename, contentType } }
   downloadCabinetStockExcel: async (params?: { cabinetId?: number; cabinetCode?: string; departmentId?: number }): Promise<void> => {
-    const queryParams = new URLSearchParams();
-    if (params?.cabinetId != null) queryParams.append('cabinetId', params.cabinetId.toString());
-    if (params?.cabinetCode) queryParams.append('cabinetCode', params.cabinetCode);
-    if (params?.departmentId != null) queryParams.append('departmentId', params.departmentId.toString());
-    const response = await api.get(`/reports/cabinet-stock/excel?${queryParams.toString()}`, {
-      responseType: 'blob',
-    });
-    const url = window.URL.createObjectURL(new Blob([response.data]));
+    const body = {
+      cabinetId: params?.cabinetId,
+      cabinetCode: params?.cabinetCode,
+      departmentId: params?.departmentId,
+    };
+    const response = await api.post('/reports/cabinet-stock/excel', body);
+    const res = response.data as { success?: boolean; data?: { buffer?: string; filename?: string; contentType?: string } };
+    if (!res?.success || !res?.data?.buffer) throw new Error((res as any)?.error || 'ไม่สามารถสร้างไฟล์ได้');
+    const binary = atob(res.data.buffer);
+    const bytes = new Uint8Array(binary.length);
+    for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
+    const blob = new Blob([bytes], { type: res.data.contentType || 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+    const url = window.URL.createObjectURL(blob);
     const link = document.createElement('a');
     link.href = url;
-    link.setAttribute('download', `cabinet_stock_report_${new Date().toISOString().split('T')[0]}.xlsx`);
+    link.setAttribute('download', res.data.filename || `cabinet_stock_report_${new Date().toISOString().split('T')[0]}.xlsx`);
     document.body.appendChild(link);
     link.click();
     link.remove();
@@ -1080,17 +1134,22 @@ export const reportsApi = {
   },
 
   downloadCabinetStockPdf: async (params?: { cabinetId?: number; cabinetCode?: string; departmentId?: number }): Promise<void> => {
-    const queryParams = new URLSearchParams();
-    if (params?.cabinetId != null) queryParams.append('cabinetId', params.cabinetId.toString());
-    if (params?.cabinetCode) queryParams.append('cabinetCode', params.cabinetCode);
-    if (params?.departmentId != null) queryParams.append('departmentId', params.departmentId.toString());
-    const response = await api.get(`/reports/cabinet-stock/pdf?${queryParams.toString()}`, {
-      responseType: 'blob',
-    });
-    const url = window.URL.createObjectURL(new Blob([response.data]));
+    const body = {
+      cabinetId: params?.cabinetId,
+      cabinetCode: params?.cabinetCode,
+      departmentId: params?.departmentId,
+    };
+    const response = await api.post('/reports/cabinet-stock/pdf', body);
+    const res = response.data as { success?: boolean; data?: { buffer?: string; filename?: string; contentType?: string } };
+    if (!res?.success || !res?.data?.buffer) throw new Error((res as any)?.error || 'ไม่สามารถสร้างไฟล์ได้');
+    const binary = atob(res.data.buffer);
+    const bytes = new Uint8Array(binary.length);
+    for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
+    const blob = new Blob([bytes], { type: res.data.contentType || 'application/pdf' });
+    const url = window.URL.createObjectURL(blob);
     const link = document.createElement('a');
     link.href = url;
-    link.setAttribute('download', `cabinet_stock_report_${new Date().toISOString().split('T')[0]}.pdf`);
+    link.setAttribute('download', res.data.filename || `cabinet_stock_report_${new Date().toISOString().split('T')[0]}.pdf`);
     document.body.appendChild(link);
     link.click();
     link.remove();
@@ -1099,30 +1158,35 @@ export const reportsApi = {
 };
 
 // =========================== Staff User API ===========================
+// Backend DTO: CreateStaffUserDto (email, fname, lname, role_code?, role_id?, department_id?, password?, expires_at?)
+// Backend DTO: UpdateStaffUserDto (email?, fname?, lname?, role_code?, role_id?, department_id?, password?, is_active?, expires_at?)
+// Response shape: { success: boolean; data?: T; message?: string; error?: string }
 export const staffUserApi = {
   createStaffUser: async (data: {
     email: string;
     fname: string;
     lname: string;
-    role: string; // Keep for backward compatibility, will be converted to role_code
+    role: string;
+    role_code?: string;
     department_id?: number | null;
     password?: string;
     expires_at?: string;
   }): Promise<ApiResponse<any>> => {
-    // Convert role to role_code for API
-    const requestData: any = {
-      ...data,
-      role_code: data.role,
-      role: undefined,
+    const body: Record<string, unknown> = {
+      email: data.email.trim(),
+      fname: data.fname.trim(),
+      lname: data.lname.trim(),
+      role_code: data.role_code ?? data.role,
     };
-    delete requestData.role;
-    if (data.department_id !== undefined) requestData.department_id = data.department_id;
-    const response = await api.post('/staff-users', requestData);
+    if (data.department_id != null) body.department_id = Number(data.department_id);
+    if (data.password && String(data.password).length >= 8) body.password = data.password;
+    if (data.expires_at?.trim()) body.expires_at = data.expires_at.trim();
+    const response = await api.post('/staff-users', body);
     return response.data;
   },
 
-  getAllStaffUsers: async (): Promise<ApiResponse<any[]>> => {
-    const response = await api.get('/staff-users');
+  getAllStaffUsers: async (params?: { page?: number; limit?: number; keyword?: string }): Promise<ApiResponse<any[]>> => {
+    const response = await api.get('/staff-users', { params: params ?? {} });
     return response.data;
   },
 
@@ -1138,15 +1202,23 @@ export const staffUserApi = {
       fname?: string;
       lname?: string;
       role?: string;
+      role_code?: string;
       department_id?: number | null;
       password?: string;
       is_active?: boolean;
       expires_at?: string;
     }
   ): Promise<ApiResponse<any>> => {
-    const payload: any = { ...data };
-    if (data.role !== undefined) payload.role_code = data.role;
-    const response = await api.put(`/staff-users/${id}`, payload);
+    const body: Record<string, unknown> = {};
+    if (data.email !== undefined) body.email = data.email.trim();
+    if (data.fname !== undefined) body.fname = data.fname.trim();
+    if (data.lname !== undefined) body.lname = data.lname.trim();
+    if (data.role !== undefined || data.role_code !== undefined) body.role_code = data.role_code ?? data.role;
+    if (data.department_id !== undefined) body.department_id = data.department_id === null ? null : Number(data.department_id);
+    if (data.password !== undefined && data.password !== '' && data.password.length >= 8) body.password = data.password;
+    if (data.is_active !== undefined) body.is_active = data.is_active;
+    if (data.expires_at !== undefined) body.expires_at = data.expires_at?.trim() || undefined;
+    const response = await api.put(`/staff-users/${id}`, body);
     return response.data;
   },
 
@@ -1155,19 +1227,13 @@ export const staffUserApi = {
     return response.data;
   },
 
-  regenerateClientSecret: async (
-    id: number,
-    data?: { expires_at?: string }
-  ): Promise<ApiResponse<any>> => {
-    const response = await api.post(`/staff-users/${id}/regenerate-secret`, data || {});
+  regenerateClientSecret: async (id: number, data?: { expires_at?: string }): Promise<ApiResponse<any>> => {
+    const body = data?.expires_at ? { expires_at: data.expires_at } : {};
+    const response = await api.post(`/staff-users/${id}/regenerate-secret`, body);
     return response.data;
   },
 
-  staffUserLogin: async (data: {
-    email: string;
-    password: string;
-    roleType?: string;
-  }): Promise<ApiResponse<any>> => {
+  staffUserLogin: async (data: { email: string; password: string; roleType?: string }): Promise<ApiResponse<any>> => {
     const response = await api.post('/staff-users/login', data);
     return response.data;
   },
@@ -1373,25 +1439,25 @@ export const cabinetApi = {
 };
 
 // =========================== Cabinet Department Mapping API ===========================
+// Backend: cabinet-departments (GET/POST/PUT/DELETE), item-stocks/in-cabinet (GET)
 export const cabinetDepartmentApi = {
   getAll: async (params?: { cabinetId?: number; departmentId?: number; status?: string; keyword?: string }): Promise<ApiResponse<any[]>> => {
-    // Convert camelCase to snake_case for API
     const apiParams: any = {};
     if (params?.cabinetId !== undefined) apiParams.cabinet_id = params.cabinetId;
     if (params?.departmentId !== undefined) apiParams.department_id = params.departmentId;
     if (params?.status !== undefined) apiParams.status = params.status;
     if (params?.keyword !== undefined && params.keyword !== "") apiParams.keyword = params.keyword;
-    
+
     const response = await api.get('/cabinet-departments', { params: apiParams });
     return response.data;
   },
 
-  create: async (data: any): Promise<ApiResponse<any>> => {
+  create: async (data: { cabinet_id: number; department_id: number; status?: string; description?: string }): Promise<ApiResponse<any>> => {
     const response = await api.post('/cabinet-departments', data);
     return response.data;
   },
 
-  update: async (id: number, data: any): Promise<ApiResponse<any>> => {
+  update: async (id: number, data: { cabinet_id: number; department_id: number; status?: string; description?: string }): Promise<ApiResponse<any>> => {
     const response = await api.put(`/cabinet-departments/${id}`, data);
     return response.data;
   },
@@ -1401,9 +1467,10 @@ export const cabinetDepartmentApi = {
     return response.data;
   },
 
+  /** Backend: GET /item-stocks/in-cabinet?cabinet_id=&page=&limit=&keyword= */
   getItemStocksByCabinet: async (cabinetId: number, params?: { page?: number; limit?: number; keyword?: string }): Promise<ApiResponse<any>> => {
-    const response = await api.get('/item-stocks/in-cabinet', { 
-      params: { ...params, cabinet_id: cabinetId } 
+    const response = await api.get('/item-stocks/in-cabinet', {
+      params: { ...params, cabinet_id: cabinetId },
     });
     return response.data;
   },
