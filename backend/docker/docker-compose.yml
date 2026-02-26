@@ -4,10 +4,10 @@
 # ใช้จากโฟลเดอร์ backend: docker compose -f docker/docker-compose.yml up -d
 # ต้องมี .env ใน backend/ (DATABASE_URL, JWT_SECRET ฯลฯ)
 
-version: "3.8"
-
 services:
   backend:
+    env_file:
+      - ../.env
     build:
       context: ..
       dockerfile: docker/Dockerfile

@@ -45,9 +45,9 @@ RUN addgroup --system --gid 1001 nodejs && \
 ENV NODE_ENV=production
 ENV PORT=4000
 
-# Copy package files and install production deps only
+# Copy package files and install production deps only (npm install เพื่อไม่พึ่ง lock file ที่อาจไม่ sync)
 COPY package*.json ./
-RUN npm ci --omit=dev && npm cache clean --force
+RUN npm install --omit=dev && npm cache clean --force
 
 # Copy built app and Prisma artifacts
 COPY --from=builder --chown=nestjs:nodejs /app/dist ./dist
