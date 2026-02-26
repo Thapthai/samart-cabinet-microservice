@@ -54,6 +54,9 @@ COPY --from=builder --chown=nestjs:nodejs /app/dist ./dist
 COPY --from=builder --chown=nestjs:nodejs /app/generated ./generated
 COPY --from=builder --chown=nestjs:nodejs /app/prisma ./prisma
 
+# โฟลเดอร์สำหรับ multer upload (item.controller)
+RUN mkdir -p /app/uploads && chown -R nestjs:nodejs /app/uploads
+
 USER nestjs
 
 EXPOSE 4000
