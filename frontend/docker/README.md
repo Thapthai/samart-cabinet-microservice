@@ -24,7 +24,7 @@ docker/
 | ตัวแปร | คำอธิบาย | ตัวอย่าง |
 |--------|----------|----------|
 | `NEXTAUTH_SECRET` | Secret สำหรับ NextAuth | (ค่าจาก .env.example) |
-| `NEXTAUTH_URL` | URL หน้าแอปที่ใช้เข้าถึง (รวม basePath) | `http://localhost:3100/smart-cabinet-cu` |
+| `NEXTAUTH_URL` | URL หน้าแอปที่ใช้เข้าถึง (รวม basePath) | `http://localhost:4100/smart-cabinet-cu` |
 | `NEXT_PUBLIC_BASE_PATH` | basePath ของ Next.js | `/smart-cabinet-cu` |
 | `NEXT_PUBLIC_API_URL` | URL ของ Backend API | `http://localhost:3000/smart-cabinet-cu/api/v1` |
 | `NEXT_PUBLIC_FIREBASE_*` | (ถ้าใช้ Firebase) | ดูใน .env.example |
@@ -43,9 +43,9 @@ docker compose -f docker/docker-compose.yml up -d --build
 
 - Image: `frontend-smart-cabinet:latest`
 - Container: `smart-cabinet-frontend`
-- Port: **3100**
-- เข้าใช้: **http://localhost:3100/smart-cabinet-cu**
-- Health: `http://localhost:3100/smart-cabinet-cu`
+- Port: **4100**
+- เข้าใช้: **http://localhost:4100/smart-cabinet-cu**
+- Health: `http://localhost:4100/smart-cabinet-cu`
 
 Build args (`NEXT_PUBLIC_API_URL`, `NEXT_PUBLIC_BASE_PATH`) ใช้ค่าจาก `.env` หรือ default ใน compose
 
