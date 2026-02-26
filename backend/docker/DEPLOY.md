@@ -26,8 +26,8 @@ cd /path/to/samart-cabinet-cu-app/backend
 ### 3. Build และรัน
 
 ```bash
-# จากโฟลเดอร์ backend
-docker compose -f docker/docker-compose.yml up -d --build
+# จากโฟลเดอร์ backend (ใช้ --env-file .env เพื่อให้ Compose อ่านตัวแปรจาก .env)
+docker compose -f docker/docker-compose.yml --env-file .env up -d --build
 ```
 
 - `--build` = build image ใหม่
@@ -57,7 +57,7 @@ Backend จะ listen ที่ **port 4000**
 docker compose -f docker/docker-compose.yml down
 
 # Build ใหม่แล้วรันใหม่ (หลัง pull code)
-docker compose -f docker/docker-compose.yml up -d --build
+docker compose -f docker/docker-compose.yml --env-file .env up -d --build
 
 # ดู log แบบ realtime
 docker compose -f docker/docker-compose.yml logs -f backend
