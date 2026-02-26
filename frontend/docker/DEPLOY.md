@@ -108,6 +108,40 @@ docker compose -f docker/docker-compose.yml --env-file .env up -d
 
 ---
 
+## ให้ Frontend กับ Backend อยู่ network เดียวกัน (ใช้ชื่อ `backend`)
+
+ถ้า Frontend และ Backend รันคนละ Compose (คนละโฟลเดอร์) โดยปกติจะอยู่คนละ network จึงต่อกันด้วยชื่อ service ไม่ได้ ต้องใช้ IP โฮสต์
+
+ถ้าอยากให้ Frontend เรียก Backend ด้วย **`http://backend:4000/...`** ให้ใช้ **shared external network** แบบนี้:
+
+1. **สร้าง network (ทำครั้งเดียว)** บนเครื่องที่รัน Docker:
+   ```bash
+   docker network create smart-cabinet-net
+   ```
+
+2. **รัน Backend** (จากโฟลเดอร์ backend):
+   ```bash
+   cd /path/to/samart-cabinet-cu-app/backend
+   docker compose -f docker/docker-compose.yml --env-file .env up -d --build
+   ```
+
+3. **ตั้งค่า Frontend** ใน `frontend/.env`:
+   ```env
+   NEXT_PUBLIC_API_URL=http://backend:4000/smart-cabinet-cu/api/v1
+   NEXTAUTH_URL=http://10.11.9.84:4100/smart-cabinet-cu
+   ```
+   (ใช้ IP จริงแทน 10.11.9.84 ตามที่ผู้ใช้เข้าแอป)
+
+4. **รัน Frontend** (จากโฟลเดอร์ frontend):
+   ```bash
+   cd /path/to/samart-cabinet-cu-app/frontend
+   docker compose -f docker/docker-compose.yml --env-file .env up -d --build
+   ```
+
+ทั้ง Backend และ Frontend compose ใช้ network `smart-cabinet-net` (external) แล้ว จึงเห็นกันด้วยชื่อ service `backend` / `frontend` และช่วยลดปัญหา 401 / ECONNREFUSED จากที่ Frontend ต่อ Backend ไม่ถึง
+
+---
+
 ## หมายเหตุ
 
 - Build args `NEXT_PUBLIC_API_URL` และ `NEXT_PUBLIC_BASE_PATH` ต้องตรงกับสภาพแวดล้อม เพราะ Next.js bake ค่าเหล่านี้ตอน build
