@@ -3,8 +3,7 @@
 # ================================
 # ใช้จากโฟลเดอร์ frontend: docker compose -f docker/docker-compose.yml up -d
 # ตัวแปร env ตรงกับ frontend/.env.example (คัดลอกเป็น .env หรือ .env.local)
-
-version: "3.8"
+# หมายเหตุ: version ถูกลบแล้ว (Docker Compose V2 ไม่ใช้แล้ว)
 
 services:
   frontend:
