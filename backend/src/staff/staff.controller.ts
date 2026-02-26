@@ -3,6 +3,8 @@ import {
   Controller,
   Delete,
   Get,
+  HttpCode,
+  HttpStatus,
   Param,
   ParseIntPipe,
   Post,
@@ -14,6 +16,7 @@ import {
   CreateStaffUserDto,
   UpdateStaffUserDto,
   RegenerateClientSecretDto,
+  StaffLoginDto,
 } from '../auth/dto/staff-user.dto';
 import { CreateStaffRoleDto, UpdateStaffRoleDto } from '../auth/dto/staff-role.dto';
 import { BulkUpdateStaffRolePermissionsDto } from '../auth/dto/staff-role-permission.dto';
@@ -21,6 +24,12 @@ import { BulkUpdateStaffRolePermissionsDto } from '../auth/dto/staff-role-permis
 @Controller('staff-users')
 export class StaffUsersController {
   constructor(private readonly staffService: StaffService) {}
+
+  @Post('login')
+  @HttpCode(HttpStatus.OK)
+  async login(@Body() dto: StaffLoginDto) {
+    return this.staffService.loginStaffUser(dto.email, dto.password);
+  }
 
   @Get()
   async findAll(
@@ -108,6 +117,11 @@ export class StaffRolePermissionsController {
   @Get()
   async findAll() {
     return this.staffService.findAllStaffRolePermissions();
+  }
+
+  @Get(':role')
+  async getByRole(@Param('role') role: string) {
+    return this.staffService.findPermissionsByRoleCode(role);
   }
 
   @Put('bulk')

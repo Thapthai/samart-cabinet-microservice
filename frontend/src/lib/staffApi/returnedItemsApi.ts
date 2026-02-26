@@ -3,16 +3,19 @@ import type { ApiResponse } from '@/types/common';
 
 export const returnedItemsApi = {
   getReturnedItems: async (query?: {
+    keyword?: string;
     itemCode?: string;
     itemTypeId?: number;
     startDate?: string;
     endDate?: string;
     page?: number;
     limit?: number;
+    departmentId?: string | number;
+    cabinetId?: string | number;
     departmentCode?: string;
     cabinetCode?: string;
   }): Promise<ApiResponse<any>> => {
-    const response = await staffApi.get('/medical-supply-items/returned-items', { params: query });
+    const response = await staffApi.get('/medical-supply/returned-items', { params: query });
     return response.data;
   },
 

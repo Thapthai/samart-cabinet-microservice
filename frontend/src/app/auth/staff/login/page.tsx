@@ -27,20 +27,22 @@ export default function StaffLoginPage() {
     setLoading(true);
 
     try {
-      const response = await staffUserApi.staffUserLogin({ ...formData, roleType: 'staff' }); // ระบุชัดเจนว่าเป็น staff login
+      const response = await staffUserApi.staffUserLogin({ email: formData.email, password: formData.password });
       
-      if (response.success) {
-        // Store staff token and user info in localStorage
-        localStorage.setItem('staff_token', response.data.access_token);
-        localStorage.setItem('staff_user', JSON.stringify(response.data.user));
+      if (response?.success && response?.data) {
+        const token = response.data.token ?? response.data.access_token;
+        const user = response.data.user;
+        if (token) localStorage.setItem('staff_token', token);
+        if (user) localStorage.setItem('staff_user', JSON.stringify(user));
         
         // Redirect to staff dashboard
         router.push('/staff/dashboard');
       } else {
-        setError(response.message || 'เข้าสู่ระบบไม่สำเร็จ');
+        setError((response as any)?.message || 'เข้าสู่ระบบไม่สำเร็จ');
       }
     } catch (err: any) {
-      setError(err.message || 'เกิดข้อผิดพลาดในการเชื่อมต่อ');
+      const msg = err?.response?.data?.message || err?.message || 'เกิดข้อผิดพลาดในการเชื่อมต่อ';
+      setError(Array.isArray(msg) ? msg.join(', ') : msg);
     } finally {
       setLoading(false);
     }

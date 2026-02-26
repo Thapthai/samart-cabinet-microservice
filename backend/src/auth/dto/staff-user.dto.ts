@@ -1,6 +1,18 @@
 import { IsEmail, IsString, IsOptional, IsBoolean, IsNumber, MinLength } from 'class-validator';
 import { Type } from 'class-transformer';
 
+export class StaffLoginDto {
+  @IsEmail()
+  email: string;
+
+  @IsString()
+  password: string;
+
+  @IsOptional()
+  @IsString()
+  roleType?: string;
+}
+
 export class CreateStaffUserDto {
   @IsEmail()
   email: string;

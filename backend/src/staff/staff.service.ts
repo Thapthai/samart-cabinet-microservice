@@ -1,4 +1,5 @@
 import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
+import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcryptjs';
 import { PrismaService } from '../prisma/prisma.service';
 import { ClientCredentialStrategy } from '../auth/strategies/client-credential.strategy';
@@ -14,6 +15,7 @@ export class StaffService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly clientCredentialStrategy: ClientCredentialStrategy,
+    private readonly jwt: JwtService,
   ) {}
 
   private async resolveRoleId(role_code?: string, role_id?: number): Promise<number | null> {
@@ -24,6 +26,37 @@ export class StaffService {
       select: { id: true },
     });
     return role?.id ?? null;
+  }
+
+  async loginStaffUser(email: string, password: string) {
+    const staff = await this.prisma.staffUser.findUnique({
+      where: { email: email.trim() },
+      include: { role: { select: { id: true, code: true, name: true } } },
+    });
+    if (!staff) return { success: false, message: 'Invalid credentials' };
+    if (!staff.is_active) return { success: false, message: 'Account is deactivated' };
+    const valid = await bcrypt.compare(password, staff.password);
+    if (!valid) return { success: false, message: 'Invalid credentials' };
+    const token = this.jwt.sign(
+      { sub: staff.id, email: staff.email, staff: true, role_code: staff.role?.code },
+      { expiresIn: '24h' },
+    );
+    return {
+      success: true,
+      message: 'Login successful',
+      data: {
+        user: {
+          id: staff.id,
+          email: staff.email,
+          fname: staff.fname,
+          lname: staff.lname,
+          role: staff.role?.code ?? null,
+          role_id: staff.role_id,
+          department_id: staff.department_id,
+        },
+        token,
+      },
+    };
   }
 
   async findAllStaffUsers(params?: { page?: number; limit?: number; keyword?: string }) {
@@ -254,6 +287,20 @@ export class StaffService {
       role: p.role ? { code: p.role.code, name: p.role.name } : null,
     }));
     return { success: true, data };
+  }
+
+  async findPermissionsByRoleCode(roleCode: string) {
+    const role = await this.prisma.staffRole.findUnique({
+      where: { code: roleCode.trim() },
+      select: { id: true },
+    });
+    if (!role) return { success: true, data: [] };
+    const list = await this.prisma.staffRolePermission.findMany({
+      where: { role_id: role.id },
+      orderBy: { menu_href: 'asc' },
+      select: { menu_href: true, can_access: true },
+    });
+    return { success: true, data: list };
   }
 
   async bulkUpdateStaffRolePermissions(

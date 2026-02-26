@@ -12,7 +12,7 @@ export const itemComparisonApi = {
     page?: number;
     limit?: number;
   }): Promise<ApiResponse<any>> => {
-    const response = await staffApi.get('/medical-supplies-comparison', { params: query });
+    const response = await staffApi.get('/medical-supply/compare-dispensed-vs-usage', { params: query });
     return response.data;
   },
 
@@ -27,11 +27,11 @@ export const itemComparisonApi = {
     page?: number;
     limit?: number;
   }): Promise<ApiResponse<any>> => {
-    const response = await staffApi.get('/medical-supplies-usage-by-item-code', { params: query });
+    const response = await staffApi.get('/medical-supply/usage-by-item-code-from-item-table', { params: query });
     return response.data;
   },
 
-  /** ดาวน์โหลดรายงานเปรียบเทียบการเบิกและใช้ (Excel/PDF) โดยไม่เปิดแท็บใหม่ */
+  /** ดาวน์โหลดรายงานเปรียบเทียบการเบิกและใช้ (Excel) — Backend POST /reports/item-comparison/excel */
   downloadComparisonExcel: async (params?: {
     itemCode?: string;
     itemTypeId?: number;
@@ -40,27 +40,32 @@ export const itemComparisonApi = {
     departmentCode?: string;
     includeUsageDetails?: boolean | string;
   }): Promise<void> => {
-    const queryParams = new URLSearchParams();
-    if (params?.itemCode) queryParams.append('itemCode', params.itemCode);
-    if (params?.itemTypeId != null) queryParams.append('itemTypeId', String(params.itemTypeId));
-    if (params?.startDate) queryParams.append('startDate', params.startDate);
-    if (params?.endDate) queryParams.append('endDate', params.endDate);
-    if (params?.departmentCode) queryParams.append('departmentCode', params.departmentCode);
-    if (params?.includeUsageDetails !== undefined) queryParams.append('includeUsageDetails', String(params.includeUsageDetails));
-    const response = await staffApi.get(
-      `/medical-supplies-comparison/export/excel?${queryParams.toString()}`,
-      { responseType: 'blob' },
-    );
-    const url = window.URL.createObjectURL(new Blob([response.data]));
+    const body = {
+      itemCode: params?.itemCode,
+      itemTypeId: params?.itemTypeId,
+      startDate: params?.startDate,
+      endDate: params?.endDate,
+      departmentCode: params?.departmentCode,
+      includeUsageDetails: params?.includeUsageDetails,
+    };
+    const response = await staffApi.post('/reports/item-comparison/excel', body);
+    const res = response.data as { success?: boolean; data?: { buffer?: string; filename?: string; contentType?: string } };
+    if (!res?.success || !res?.data?.buffer) throw new Error((res as any)?.error || 'ไม่สามารถสร้างไฟล์ได้');
+    const binary = atob(res.data.buffer);
+    const bytes = new Uint8Array(binary.length);
+    for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
+    const blob = new Blob([bytes], { type: res.data.contentType || 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+    const url = window.URL.createObjectURL(blob);
     const link = document.createElement('a');
     link.href = url;
-    link.setAttribute('download', `medical_supplies_comparison_${new Date().toISOString().split('T')[0]}.xlsx`);
+    link.setAttribute('download', res.data.filename || `medical_supplies_comparison_${new Date().toISOString().split('T')[0]}.xlsx`);
     document.body.appendChild(link);
     link.click();
     link.remove();
     window.URL.revokeObjectURL(url);
   },
 
+  /** ดาวน์โหลดรายงานเปรียบเทียบการเบิกและใช้ (PDF) — Backend POST /reports/item-comparison/pdf */
   downloadComparisonPdf: async (params?: {
     itemCode?: string;
     itemTypeId?: number;
@@ -69,21 +74,25 @@ export const itemComparisonApi = {
     departmentCode?: string;
     includeUsageDetails?: boolean | string;
   }): Promise<void> => {
-    const queryParams = new URLSearchParams();
-    if (params?.itemCode) queryParams.append('itemCode', params.itemCode);
-    if (params?.itemTypeId != null) queryParams.append('itemTypeId', String(params.itemTypeId));
-    if (params?.startDate) queryParams.append('startDate', params.startDate);
-    if (params?.endDate) queryParams.append('endDate', params.endDate);
-    if (params?.departmentCode) queryParams.append('departmentCode', params.departmentCode);
-    if (params?.includeUsageDetails !== undefined) queryParams.append('includeUsageDetails', String(params.includeUsageDetails));
-    const response = await staffApi.get(
-      `/medical-supplies-comparison/export/pdf?${queryParams.toString()}`,
-      { responseType: 'blob' },
-    );
-    const url = window.URL.createObjectURL(new Blob([response.data]));
+    const body = {
+      itemCode: params?.itemCode,
+      itemTypeId: params?.itemTypeId,
+      startDate: params?.startDate,
+      endDate: params?.endDate,
+      departmentCode: params?.departmentCode,
+      includeUsageDetails: params?.includeUsageDetails,
+    };
+    const response = await staffApi.post('/reports/item-comparison/pdf', body);
+    const res = response.data as { success?: boolean; data?: { buffer?: string; filename?: string; contentType?: string } };
+    if (!res?.success || !res?.data?.buffer) throw new Error((res as any)?.error || 'ไม่สามารถสร้างไฟล์ได้');
+    const binary = atob(res.data.buffer);
+    const bytes = new Uint8Array(binary.length);
+    for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
+    const blob = new Blob([bytes], { type: res.data.contentType || 'application/pdf' });
+    const url = window.URL.createObjectURL(blob);
     const link = document.createElement('a');
     link.href = url;
-    link.setAttribute('download', `medical_supplies_comparison_${new Date().toISOString().split('T')[0]}.pdf`);
+    link.setAttribute('download', res.data.filename || `medical_supplies_comparison_${new Date().toISOString().split('T')[0]}.pdf`);
     document.body.appendChild(link);
     link.click();
     link.remove();
