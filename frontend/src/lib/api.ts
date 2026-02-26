@@ -1377,7 +1377,11 @@ export const categoriesApi = {
 // Department API
 export const departmentApi = {
   getAll: async (params?: { page?: number; limit?: number; keyword?: string; isCancel?: boolean }): Promise<ApiResponse<any[]>> => {
-    const response = await api.get('/departments', { params });
+    const safeParams = { ...params };
+    if (safeParams.keyword !== undefined && typeof safeParams.keyword === 'string' && !safeParams.keyword.trim()) {
+      delete safeParams.keyword;
+    }
+    const response = await api.get('/departments', { params: safeParams });
     return response.data;
   },
 

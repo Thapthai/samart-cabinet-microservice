@@ -39,9 +39,53 @@ export class MedicalSupplyUsageController {
   }
 
   @Get()
-  async findAll(@Query() query: GetMedicalSupplyUsagesQueryDto) {
+  async findAll(
+    @Query('page') page?: string,
+    @Query('limit') limit?: string,
+    @Query('startDate') startDate?: string,
+    @Query('endDate') endDate?: string,
+    @Query('patient_hn') patient_hn?: string,
+    @Query('HN') HN?: string,
+    @Query('EN') EN?: string,
+    @Query('department_code') department_code?: string,
+    @Query('department_name') department_name?: string,
+    @Query('print_date') print_date?: string,
+    @Query('time_print_date') time_print_date?: string,
+    @Query('billing_status') billing_status?: string,
+    @Query('usage_type') usage_type?: string,
+    @Query('keyword') keyword?: string,
+    @Query('user_name') user_name?: string,
+    @Query('first_name') first_name?: string,
+    @Query('lastname') lastname?: string,
+    @Query('assession_no') assession_no?: string,
+  ) {
     try {
-      const result = await this.medicalSuppliesService.findAll(query);
+      const query: GetMedicalSupplyUsagesQueryDto = {
+        page: page != null ? page : undefined,
+        limit: limit != null ? limit : undefined,
+        startDate,
+        endDate,
+        patient_hn,
+        HN,
+        EN,
+        department_code,
+        department_name,
+        print_date,
+        time_print_date,
+        billing_status,
+        usage_type,
+        keyword,
+        user_name,
+        first_name,
+        lastname,
+        assession_no,
+      };
+      const normalized = {
+        ...query,
+        page: page != null ? Number(page) : undefined,
+        limit: limit != null ? Number(limit) : undefined,
+      };
+      const result = await this.medicalSuppliesService.findAll(normalized as GetMedicalSupplyUsagesQueryDto);
       return { success: true, ...result };
     } catch (error: any) {
       return { success: false, message: error?.message };
@@ -221,7 +265,12 @@ export class MedicalSupplyItemController {
   @Get('return-history')
   async getReturnHistory(@Query() query: GetReturnHistoryQueryDto) {
     try {
-      const result = await this.medicalSuppliesService.getReturnHistory(query);
+      const normalized = {
+        ...query,
+        page: query.page != null ? Number(query.page) : undefined,
+        limit: query.limit != null ? Number(query.limit) : undefined,
+      };
+      const result = await this.medicalSuppliesService.getReturnHistory(normalized as GetReturnHistoryQueryDto);
       return { success: true, ...result };
     } catch (error: any) {
       return { success: false, message: error?.message };

@@ -1,4 +1,4 @@
-import { Body, Controller, Delete, Get, Param, ParseIntPipe, Post, Put, Query } from '@nestjs/common';
+import { Body, Controller, Delete, Get, HttpException, HttpStatus, Param, ParseIntPipe, Post, Put, Query } from '@nestjs/common';
 import { DepartmentService } from './department.service';
 import {
   CreateCabinetDepartmentDto,
@@ -11,7 +11,7 @@ export class DepartmentController {
   constructor(private readonly departmentService: DepartmentService) {}
 
   @Get()
-  getAllDepartments(
+  async getAllDepartments(
     @Query('page') page?: string,
     @Query('limit') limit?: string,
     @Query('keyword') keyword?: string,
@@ -19,9 +19,17 @@ export class DepartmentController {
     const params = {
       page: page ? parseInt(page, 10) : undefined,
       limit: limit ? parseInt(limit, 10) : undefined,
-      keyword,
+      keyword: typeof keyword === 'string' && keyword.trim() ? keyword.trim() : undefined,
     };
-    return this.departmentService.getAllDepartments(params);
+    try {
+      return await this.departmentService.getAllDepartments(params);
+    } catch (err: any) {
+      const message = err?.message ?? String(err);
+      throw new HttpException(
+        { success: false, error: 'getAllDepartments failed', message },
+        HttpStatus.INTERNAL_SERVER_ERROR,
+      );
+    }
   }
 }
 

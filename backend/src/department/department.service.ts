@@ -14,26 +14,38 @@ export class DepartmentService {
   constructor(private prisma: PrismaService) {}
 
   async getAllDepartments(query?: { page?: number; limit?: number; keyword?: string }) {
-    const page = query?.page || 1;
-    const limit = query?.limit || 10;
-    const skip = (page - 1) * limit;
-    const where: any = {};
-    if (query?.keyword) {
-      where.OR = [
-        { DepName: { contains: query.keyword } },
-        { DepName2: { contains: query.keyword } },
-      ];
+    try {
+      const page = query?.page || 1;
+      const limit = Math.min(500, Math.max(1, query?.limit || 10));
+      const skip = (page - 1) * limit;
+      const where: any = {};
+      const keyword = typeof query?.keyword === 'string' ? query.keyword.trim() : '';
+      if (keyword) {
+        where.OR = [
+          { DepName: { contains: keyword } },
+          { DepName2: { contains: keyword } },
+        ];
+      }
+      const [departments, total] = await Promise.all([
+        this.prisma.department.findMany({
+          where,
+          skip,
+          take: limit,
+          orderBy: { ID: 'asc' },
+          select: {
+            ID: true,
+            DepName: true,
+            DepName2: true,
+            RefDepID: true,
+          },
+        }),
+        this.prisma.department.count({ where }),
+      ]);
+      return { success: true, data: departments, total, page, limit, lastPage: Math.ceil(total / limit) };
+    } catch (err: any) {
+      this.logger.error(`getAllDepartments failed: ${err?.message ?? err}`);
+      throw err;
     }
-    const [departments, total] = await Promise.all([
-      this.prisma.department.findMany({
-        where,
-        skip,
-        take: limit,
-        orderBy: { sort: 'asc' },
-      }),
-      this.prisma.department.count({ where }),
-    ]);
-    return { success: true, data: departments, total, page, limit, lastPage: Math.ceil(total / limit) };
   }
 
   private async generateCabinetCode(options: {

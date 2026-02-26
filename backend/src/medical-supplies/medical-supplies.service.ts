@@ -755,8 +755,8 @@ export class MedicalSuppliesService {
     lastPage: number;
   }> {
     try {
-      const page = query.page || 1;
-      const limit = query.limit || 10;
+      const page = Math.max(1, Number(query?.page) || 1);
+      const limit = Math.min(500, Math.max(1, Number(query?.limit) || 10));
       const skip = (page - 1) * limit;
 
       // Build where clause - support both HN and patient_hn

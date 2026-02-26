@@ -340,13 +340,12 @@ export class GetMedicalSupplyUsagesQueryDto {
   @IsString()
   assession_no?: string;
 
+  /** Query sends string; internal callers may pass number. Service normalizes to number. */
   @IsOptional()
-  @IsNumber()
-  page?: number;
+  page?: number | string;
 
   @IsOptional()
-  @IsNumber()
-  limit?: number;
+  limit?: number | string;
 }
 
 // Query DTO for Medical Supply Usage Logs
@@ -498,12 +497,10 @@ export class GetReturnHistoryQueryDto {
   date_to?: string;
 
   @IsOptional()
-  @IsNumber()
-  page?: number;
+  page?: number | string;
 
   @IsOptional()
-  @IsNumber()
-  limit?: number;
+  limit?: number | string;
 }
 
 // Response Interface

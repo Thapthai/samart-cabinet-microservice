@@ -318,8 +318,9 @@ export default function Sidebar({ isCollapsed, setIsCollapsed }: SidebarProps) {
                           setOpenSubmenus((p) => ({ ...p, [item.href]: !open }));
                         }}
                         className={cn(
-                          "flex-shrink-0 p-2 rounded-lg text-inherit hover:bg-pink-100 transition-colors",
-                          isActive && "text-white"
+                          "flex-shrink-0 w-7 h-7 flex items-center justify-center rounded-full text-inherit transition-colors",
+                          "hover:bg-black/5 focus:outline-none focus-visible:ring-1 focus-visible:ring-pink-400/50",
+                          isActive && "text-white hover:bg-white/15"
                         )}
                         aria-expanded={open}
                         aria-label={open ? "ปิดเมนูย่อย" : "เปิดเมนูย่อย"}
@@ -361,11 +362,11 @@ export default function Sidebar({ isCollapsed, setIsCollapsed }: SidebarProps) {
                                     e.stopPropagation();
                                     setOpenSubmenus((p) => ({ ...p, [nestedKey]: !nestedOpen }));
                                   }}
-                                  className="flex-shrink-0 p-1.5 rounded text-inherit hover:bg-pink-100"
+                                  className="flex-shrink-0 w-6 h-6 flex items-center justify-center rounded-full text-inherit hover:bg-black/5 focus:outline-none focus-visible:ring-1 focus-visible:ring-pink-400/50 transition-colors"
                                   aria-expanded={nestedOpen}
                                   aria-label={nestedOpen ? "ปิดเมนูย่อย" : "เปิดเมนูย่อย"}
                                 >
-                                  <ChevronRight className={cn("h-4 w-4 transition-transform duration-200", nestedOpen && "rotate-90")} />
+                                  <ChevronRight className={cn("h-3.5 w-3.5 transition-transform duration-200", nestedOpen && "rotate-90")} />
                                 </button>
                               </div>
                               {nestedOpen && (

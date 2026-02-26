@@ -27,13 +27,20 @@ import { toast } from "sonner";
 import { staffMenuItems, type StaffMenuSubItem } from "@/app/staff/menus";
 
 
-// Flatten staffMenuItems (and submenus) from menus.ts for permission table
-const getMenuItems = () => {
+// Flatten staffMenuItems (and submenus) from menus.ts for permission table.
+// Dedupe by href so the same path (e.g. parent + sub both /staff/items) appears only once.
+const getMenuItems = (): Array<{ value: string; label: string }> => {
+  const seen = new Set<string>();
   const menuItems: Array<{ value: string; label: string }> = [];
   staffMenuItems.forEach((menu) => {
-    menuItems.push({ value: menu.href, label: menu.name });
+    if (!seen.has(menu.href)) {
+      seen.add(menu.href);
+      menuItems.push({ value: menu.href, label: menu.name });
+    }
     if (menu.submenu) {
       menu.submenu.forEach((submenu: StaffMenuSubItem) => {
+        if (seen.has(submenu.href)) return;
+        seen.add(submenu.href);
         menuItems.push({ value: submenu.href, label: submenu.name });
       });
     }
