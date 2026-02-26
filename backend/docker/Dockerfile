@@ -43,7 +43,7 @@ RUN addgroup --system --gid 1001 nodejs && \
     adduser --system --uid 1001 nestjs
 
 ENV NODE_ENV=production
-ENV PORT=3000
+ENV PORT=4000
 
 # Copy package files and install production deps only
 COPY package*.json ./
@@ -56,10 +56,10 @@ COPY --from=builder --chown=nestjs:nodejs /app/prisma ./prisma
 
 USER nestjs
 
-EXPOSE 3000
+EXPOSE 4000
 
 # Health check - API health endpoint
 HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
-    CMD wget --quiet --tries=1 --spider http://localhost:3000/smart-cabinet-cu/api/v1/health || exit 1
+    CMD wget --quiet --tries=1 --spider http://localhost:4000/smart-cabinet-cu/api/v1/health || exit 1
 
 CMD ["node", "dist/main.js"]

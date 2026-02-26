@@ -111,6 +111,12 @@ export class StaffService {
     const roleId = await this.resolveRoleId(dto.role_code, dto.role_id);
     if (roleId == null) throw new BadRequestException('role_code or role_id is required and must match an existing role');
 
+    const departmentId = dto.department_id ?? null;
+    if (departmentId != null) {
+      const dept = await this.prisma.department.findUnique({ where: { ID: departmentId }, select: { ID: true } });
+      if (!dept) throw new BadRequestException(`Department with ID ${departmentId} not found`);
+    }
+
     const password = dto.password?.trim() && dto.password.length >= 8
       ? await bcrypt.hash(dto.password, 10)
       : await bcrypt.hash('password123', 10);
@@ -127,7 +133,7 @@ export class StaffService {
         fname: dto.fname.trim(),
         lname: dto.lname.trim(),
         role_id: roleId,
-        department_id: dto.department_id ?? null,
+        department_id: departmentId,
         password,
         client_id,
         client_secret: client_secret_hash,

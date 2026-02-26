@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -50,6 +50,7 @@ export default function CreateMappingDialog({
   const [cabinets, setCabinets] = useState<Cabinet[]>([]);
   const [loadingDepartments, setLoadingDepartments] = useState(false);
   const [loadingCabinets, setLoadingCabinets] = useState(false);
+  const dropdownSlotRef = useRef<HTMLDivElement>(null);
 
   // สถานะเริ่มต้นเป็น ACTIVE ตอนเปิด dialog
   useEffect(() => {
@@ -93,14 +94,16 @@ export default function CreateMappingDialog({
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-2xl max-h-[90vh] flex flex-col">
-        <DialogHeader className="shrink-0">
-          <DialogTitle>เพิ่มการเชื่อมโยงใหม่</DialogTitle>
-          <DialogDescription>เชื่อมโยงตู้ Cabinets กับแผนก</DialogDescription>
-        </DialogHeader>
-        <div className="grid gap-4 py-4 overflow-y-auto flex-1 pr-1">
-          <SearchableSelect
-            label="ตู้ Cabinets"
-            placeholder="เลือกตู้"
+        <div ref={dropdownSlotRef} className="relative flex flex-col flex-1 min-h-0">
+          <DialogHeader className="shrink-0">
+            <DialogTitle>เพิ่มการเชื่อมโยงใหม่</DialogTitle>
+            <DialogDescription>เชื่อมโยงตู้ Cabinets กับแผนก</DialogDescription>
+          </DialogHeader>
+          <div className="grid gap-4 py-4 overflow-y-auto flex-1 pr-1">
+            <SearchableSelect
+              label="ตู้ Cabinets"
+              portalTargetRef={dropdownSlotRef}
+              placeholder="เลือกตู้"
             value={formData.cabinet_id}
             onValueChange={(value) => setFormData({ ...formData, cabinet_id: value })}
             options={cabinets
@@ -115,11 +118,12 @@ export default function CreateMappingDialog({
             required
             onSearch={loadCabinets}
             searchPlaceholder="ค้นหารหัสหรือชื่อตู้..."
-          />
+            />
 
-          <SearchableSelect
-            label="แผนก"
-            placeholder="เลือกแผนก"
+            <SearchableSelect
+              label="แผนก"
+              portalTargetRef={dropdownSlotRef}
+              placeholder="เลือกแผนก"
             value={formData.department_id}
             onValueChange={(value) => setFormData({ ...formData, department_id: value })}
             options={departments.map((dept) => ({
@@ -131,18 +135,18 @@ export default function CreateMappingDialog({
             required
             onSearch={loadDepartments}
             searchPlaceholder="ค้นหาชื่อแผนก..."
-          />
+            />
 
-          <div>
-            <Label>หมายเหตุ</Label>
+            <div>
+              <Label>หมายเหตุ</Label>
             <Input
               placeholder="หมายเหตุ..."
               value={formData.description}
               onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-            />
+              />
+            </div>
           </div>
-        </div>
-        <DialogFooter className="shrink-0 border-t pt-4">
+          <DialogFooter className="shrink-0 border-t pt-4">
           <Button variant="outline" onClick={() => onOpenChange(false)} disabled={saving}>
             ยกเลิก
           </Button>
@@ -156,7 +160,8 @@ export default function CreateMappingDialog({
               "บันทึก"
             )}
           </Button>
-        </DialogFooter>
+          </DialogFooter>
+        </div>
       </DialogContent>
     </Dialog>
   );

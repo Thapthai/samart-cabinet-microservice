@@ -11,7 +11,7 @@ export class DepartmentService {
   private readonly logger = new Logger(DepartmentService.name);
   private readonly HOSPITAL_PREFIX = 'VTN';
 
-  constructor(private prisma: PrismaService) {}
+  constructor(private prisma: PrismaService) { }
 
   async getAllDepartments(query?: { page?: number; limit?: number; keyword?: string }) {
     try {
@@ -184,10 +184,15 @@ export class DepartmentService {
 
   async createCabinetDepartment(data: CreateCabinetDepartmentDto) {
     try {
+
       const [cabinet, department] = await Promise.all([
         this.prisma.cabinet.findUnique({ where: { id: data.cabinet_id } }),
-        this.prisma.department.findUnique({ where: { ID: data.department_id } }),
+        this.prisma.department.findUnique({
+          where: { ID: data.department_id },
+          select: { ID: true, DepName: true, DepName2: true },
+        }),
       ]);
+
       if (!cabinet || !department) {
         return { success: false, message: 'Validation failed - data not found' };
       }

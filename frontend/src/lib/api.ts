@@ -253,10 +253,10 @@ export const itemsApi = {
 };
 
 // =========================================== Medical Supplies API ===========================================
-// Backend: medical-supply-usages (list/create/get/update/delete), medical-supply-items (by-usage, return, dispense, record-stock-returns), medical-supply (dispensed/returned items, compare, usage-by-item-code)
+// Backend: medical-supplies (list/create/get/update/delete), medical-supply-items (by-usage, return, dispense, record-stock-returns), medical-supply (dispensed/returned items, compare, usage-by-item-code)
 export const medicalSuppliesApi = {
   create: async (data: any): Promise<ApiResponse<any>> => {
-    const response = await api.post('/medical-supply-usages', data);
+    const response = await api.post('/medical-supplies', data);
     return response.data;
   },
 
@@ -280,17 +280,17 @@ export const medicalSuppliesApi = {
     print_date?: string;       // วันที่พิมพ์บิล
     time_print_date?: string;  // เวลาที่พิมพ์บิล
   }): Promise<PaginatedResponse<any>> => {
-    const response = await api.get('/medical-supply-usages', { params: query });
+    const response = await api.get('/medical-supplies', { params: query });
     return response.data;
   },
 
   getById: async (id: number): Promise<ApiResponse<any>> => {
-    const response = await api.get(`/medical-supply-usages/${id}`);
+    const response = await api.get(`/medical-supplies/${id}`);
     return response.data;
   },
 
   update: async (id: number, data: any): Promise<ApiResponse<any>> => {
-    const response = await api.put(`/medical-supply-usages/${id}`, data);
+    const response = await api.put(`/medical-supplies/${id}`, data);
     return response.data;
   },
 
@@ -299,17 +299,17 @@ export const medicalSuppliesApi = {
     print_date?: Date;
     time_print_date?: Date;
   }): Promise<ApiResponse<any>> => {
-    const response = await api.patch(`/medical-supply-usages/${id}/print-info`, data);
+    const response = await api.patch(`/medical-supplies/${id}/print-info`, data);
     return response.data;
   },
 
   delete: async (id: number): Promise<ApiResponse> => {
-    const response = await api.delete(`/medical-supply-usages/${id}`);
+    const response = await api.delete(`/medical-supplies/${id}`);
     return response.data;
   },
 
   getStatistics: async (): Promise<ApiResponse<any>> => {
-    const response = await api.get('/medical-supply-usages/statistics');
+    const response = await api.get('/medical-supplies/statistics');
     return response.data;
   },
 
@@ -323,7 +323,7 @@ export const medicalSuppliesApi = {
     startDate?: string;
     endDate?: string;
   }): Promise<{ success: boolean; data: any[]; total: number; page: number; limit: number; totalPages: number }> => {
-    const response = await api.get('/medical-supply-usages/logs', { params: query });
+    const response = await api.get('/medical-supplies/logs', { params: query });
     return response.data;
   },
 

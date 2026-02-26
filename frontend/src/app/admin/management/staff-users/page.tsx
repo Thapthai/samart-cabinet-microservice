@@ -133,9 +133,22 @@ export default function StaffUsersPage() {
 
   const handleCreate = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!formData.role?.trim()) {
+      toast.error('กรุณาเลือกบทบาท (Role)');
+      return;
+    }
+    if (formData.fname.trim().length < 2) {
+      toast.error('ชื่อ (Fname) ต้องมีอย่างน้อย 2 ตัวอักษร');
+      return;
+    }
+    if (formData.lname.trim().length < 2) {
+      toast.error('นามสกุล (Lname) ต้องมีอย่างน้อย 2 ตัวอักษร');
+      return;
+    }
     try {
       const payload = {
         ...formData,
+        role_code: formData.role.trim(),
         department_id: formData.department_id ? parseInt(formData.department_id, 10) : undefined,
       };
       const response = await staffUserApi.createStaffUser(payload) as { success?: boolean; data?: { client_id?: string; client_secret?: string }; message?: string };
@@ -151,7 +164,8 @@ export default function StaffUsersPage() {
         toast.error((response as any)?.message || (response as any)?.error || 'ไม่สามารถสร้าง Staff User ได้');
       }
     } catch (error: any) {
-      toast.error(error?.message || 'ไม่สามารถเชื่อมต่อกับเซิร์ฟเวอร์');
+      const msg = error?.response?.data?.message ?? error?.message ?? 'ไม่สามารถเชื่อมต่อกับเซิร์ฟเวอร์';
+      toast.error(Array.isArray(msg) ? msg.join(', ') : msg);
     }
   };
 

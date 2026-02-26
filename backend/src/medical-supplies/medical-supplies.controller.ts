@@ -23,7 +23,7 @@ import {
   GetReturnHistoryQueryDto,
 } from './dto';
 
-@Controller('medical-supply-usages')
+@Controller('medical-supplies')
 export class MedicalSupplyUsageController {
   constructor(private readonly medicalSuppliesService: MedicalSuppliesService) {}
 

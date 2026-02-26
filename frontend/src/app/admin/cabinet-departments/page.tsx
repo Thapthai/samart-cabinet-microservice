@@ -209,11 +209,11 @@ export default function ItemStockDepartmentsPage() {
   // Filter mappings based on active filters
   const filteredMappings = mappings.filter((mapping) => {
     // Filter by cabinet ID (exact match)
-    const matchesCabinet = activeFilters.cabinetId === "" || 
+    const matchesCabinet = activeFilters.cabinetId === "" ||
       mapping.cabinet_id.toString() === activeFilters.cabinetId;
 
     // Filter by department ID (exact match)
-    const matchesDepartment = activeFilters.departmentId === "" || 
+    const matchesDepartment = activeFilters.departmentId === "" ||
       mapping.department_id.toString() === activeFilters.departmentId;
 
     // Filter by status
@@ -266,46 +266,46 @@ export default function ItemStockDepartmentsPage() {
             </Button>
           </div>
 
-        <FilterSection onSearch={handleSearch} onBeforeSearch={() => setSearchVersion((v) => v + 1)} key={`filter-${filterVersion}`} />
+          <FilterSection onSearch={handleSearch} onBeforeSearch={() => setSearchVersion((v) => v + 1)} key={`filter-${filterVersion}`} />
 
-        <MappingTable
-          key={`table-${searchVersion}`}
-          mappings={filteredMappings}
-          onEdit={handleEdit}
-          onDelete={handleDelete}
-        />
+          <MappingTable
+            key={`table-${searchVersion}`}
+            mappings={filteredMappings}
+            onEdit={handleEdit}
+            onDelete={handleDelete}
+          />
 
-        <CreateMappingDialog
-          open={showCreateDialog}
-          onOpenChange={setShowCreateDialog}
-          formData={formData}
-          setFormData={setFormData}
-          onSubmit={submitCreate}
-          saving={saving}
-        />
+          <CreateMappingDialog
+            open={showCreateDialog}
+            onOpenChange={setShowCreateDialog}
+            formData={formData}
+            setFormData={setFormData}
+            onSubmit={submitCreate}
+            saving={saving}
+          />
 
-        <CreateCabinetDialog
-          open={showCreateCabinetDialog}
-          onOpenChange={setShowCreateCabinetDialog}
-          onSuccess={loadData}
-        />
+          <CreateCabinetDialog
+            open={showCreateCabinetDialog}
+            onOpenChange={setShowCreateCabinetDialog}
+            onSuccess={loadData}
+          />
 
-        <EditMappingDialog
-          open={showEditDialog}
-          onOpenChange={setShowEditDialog}
-          formData={formData}
-          setFormData={setFormData}
-          onSubmit={submitEdit}
-          saving={saving}
-          selectedMapping={selectedMapping}
-        />
+          <EditMappingDialog
+            open={showEditDialog}
+            onOpenChange={setShowEditDialog}
+            formData={formData}
+            setFormData={setFormData}
+            onSubmit={submitEdit}
+            saving={saving}
+            selectedMapping={selectedMapping}
+          />
 
-        <DeleteMappingDialog
-          open={showDeleteDialog}
-          onOpenChange={setShowDeleteDialog}
-          onConfirm={submitDelete}
-          saving={saving}
-        />
+          <DeleteMappingDialog
+            open={showDeleteDialog}
+            onOpenChange={setShowDeleteDialog}
+            onConfirm={submitDelete}
+            saving={saving}
+          />
         </div>
       </AppLayout>
     </ProtectedRoute>

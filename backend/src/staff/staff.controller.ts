@@ -1,4 +1,5 @@
 import {
+  BadRequestException,
   Body,
   Controller,
   Delete,
@@ -52,7 +53,14 @@ export class StaffUsersController {
 
   @Post()
   async create(@Body() dto: CreateStaffUserDto) {
-    return this.staffService.createStaffUser(dto);
+    try {
+      return await this.staffService.createStaffUser(dto);
+    } catch (err: any) {
+      if (err instanceof BadRequestException) throw err;
+      const message = err?.message ?? String(err);
+      if (err?.code === 'P2003') throw new BadRequestException('Department or role not found. Please check department_id and role.');
+      throw new BadRequestException(message || 'Failed to create staff user');
+    }
   }
 
   @Put(':id')

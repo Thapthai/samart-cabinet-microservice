@@ -3,7 +3,7 @@ import type { ApiResponse, PaginatedResponse } from '@/types/common';
 
 export const staffMedicalSuppliesApi = {
     create: async (data: any): Promise<ApiResponse<any>> => {
-        const response = await staffApi.post('/medical-supply-usages', data);
+        const response = await staffApi.post('/medical-supplies', data);
         return response.data;
     },
 
@@ -24,17 +24,17 @@ export const staffMedicalSuppliesApi = {
         assession_no?: string;
         department_code?: string;
     }): Promise<PaginatedResponse<any>> => {
-        const response = await staffApi.get('/medical-supply-usages', { params: query });
+        const response = await staffApi.get('/medical-supplies', { params: query });
         return response.data;
     },
 
     getById: async (id: number): Promise<ApiResponse<any>> => {
-        const response = await staffApi.get(`/medical-supply-usages/${id}`);
+        const response = await staffApi.get(`/medical-supplies/${id}`);
         return response.data;
     },
 
     update: async (id: number, data: any): Promise<ApiResponse<any>> => {
-        const response = await staffApi.put(`/medical-supply-usages/${id}`, data);
+        const response = await staffApi.put(`/medical-supplies/${id}`, data);
         return response.data;
     },
 
@@ -43,17 +43,17 @@ export const staffMedicalSuppliesApi = {
         print_date?: Date;
         time_print_date?: Date;
     }): Promise<ApiResponse<any>> => {
-        const response = await staffApi.patch(`/medical-supply-usages/${id}/print-info`, data);
+        const response = await staffApi.patch(`/medical-supplies/${id}/print-info`, data);
         return response.data;
     },
 
     delete: async (id: number): Promise<ApiResponse> => {
-        const response = await staffApi.delete(`/medical-supply-usages/${id}`);
+        const response = await staffApi.delete(`/medical-supplies/${id}`);
         return response.data;
     },
 
     getStatistics: async (): Promise<ApiResponse<any>> => {
-        const response = await staffApi.get('/medical-supply-usages/statistics');
+        const response = await staffApi.get('/medical-supplies/statistics');
         return response.data;
     },
 
@@ -150,7 +150,7 @@ export const staffMedicalSuppliesApi = {
         startDate?: string;
         endDate?: string;
     }): Promise<{ success: boolean; data: any[]; total: number; page: number; limit: number; totalPages: number }> => {
-        const response = await staffApi.get('/medical-supply-usages/logs', { params: query });
+        const response = await staffApi.get('/medical-supplies/logs', { params: query });
         return response.data;
     },
 
