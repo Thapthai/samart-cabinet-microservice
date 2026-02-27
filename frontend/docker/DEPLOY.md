@@ -51,7 +51,34 @@ curl -I http://localhost:4100/smart-cabinet-cu
 ```
 
 Frontend จะ listen ที่ **port 4100**  
-เข้าใช้แอป: **http://localhost:4100/smart-cabinet-cu** (หรือตาม host ที่ deploy)
+เข้าใช้แอป: **http://localhost:4100/smart-cabinet-cu** (หรือตาม host ที่ deploy เช่น `http://10.11.9.84:4100/smart-cabinet-cu`)
+
+---
+
+## เข้า http://IP:4100/smart-cabinet-cu ไม่ได้
+
+ถ้าเข้าจากเบราว์เซอร์ด้วย IP (เช่น `http://10.11.9.84:4100/smart-cabinet-cu`) แล้วไม่ขึ้นหรือ connection refused:
+
+1. **ให้ Next.js รับ connection จากนอก container**  
+   ใน `docker-compose.yml` ต้องมี `HOSTNAME=0.0.0.0` ใน environment ของ frontend (ใส่ไว้แล้ว) แล้วรันใหม่:
+   ```bash
+   docker compose -f docker/docker-compose.yml --env-file .env up -d
+   ```
+
+2. **ตรวจว่า container รันอยู่**
+   ```bash
+   docker compose -f docker/docker-compose.yml ps
+   curl -I http://localhost:4100/smart-cabinet-cu
+   ```
+   ถ้า curl บนเซิร์ฟเวอร์ได้ แต่เข้าจากเครื่องอื่นไม่ได้ → มักเป็น firewall
+
+3. **เปิด port 4100 บน firewall** (ถ้าใช้ ufw):
+   ```bash
+   sudo ufw allow 4100/tcp
+   sudo ufw reload
+   ```
+
+4. **ลองใส่ slash ท้าย** เช่น `http://10.11.9.84:4100/smart-cabinet-cu/`
 
 ---
 
