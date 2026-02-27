@@ -32,9 +32,15 @@ services:
       - JWT_REFRESH_SECRET=${JWT_REFRESH_SECRET:-${JWT_SECRET}}
       - JWT_EXPIRES_IN=${JWT_EXPIRES_IN:-1d}
       - JWT_REFRESH_EXPIRES_IN=${JWT_REFRESH_EXPIRES_IN:-7d}
+    networks:
+      - smart-cabinet-network
     healthcheck:
       test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:4000/smart-cabinet-cu/api/v1/health"]
       interval: 30s
       timeout: 10s
       retries: 3
       start_period: 40s
+networks:
+  smart-cabinet-network:
+    driver: bridge
+    name: smart-cabinet-production-network

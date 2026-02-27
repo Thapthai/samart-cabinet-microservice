@@ -4,9 +4,18 @@ import type { ApiResponse, PaginatedResponse, ItemsStats } from '@/types/common'
 import type { AuthResponse, User, RegisterDto, LoginDto } from '@/types/auth';
 import type { Item, CreateItemDto, UpdateItemDto, GetItemsQuery } from '@/types/item';
 
+// Server-side ใช้ BACKEND_API_URL (เช่น host.docker.internal:4000 ใน Docker), client ใช้ NEXT_PUBLIC_API_URL (localhost:4000)
+function getApiBaseUrl(): string {
+  const fallback = 'http://localhost:3000/smart-cabinet-cu/api/v1';
+  if (typeof window !== 'undefined') {
+    return process.env.NEXT_PUBLIC_API_URL || fallback;
+  }
+  return process.env.BACKEND_API_URL || process.env.NEXT_PUBLIC_API_URL || fallback;
+}
+
 // Create axios instance
 const api = axios.create({
-  baseURL: process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000/smart-cabinet-cu/api/v1',
+  baseURL: getApiBaseUrl(),
   headers: {
     'Content-Type': 'application/json',
   },

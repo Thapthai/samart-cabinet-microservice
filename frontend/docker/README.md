@@ -45,7 +45,8 @@ docker compose -f docker/docker-compose.yml up -d --build
 - Container: `smart-cabinet-frontend`
 - Port: **4100**
 - เข้าใช้: **http://localhost:4100/smart-cabinet-cu**
-- Health: `http://localhost:4100/smart-cabinet-cu`
+- Health: `
+`
 
 Build args (`NEXT_PUBLIC_API_URL`, `NEXT_PUBLIC_BASE_PATH`) ใช้ค่าจาก `.env` หรือ default ใน compose
 

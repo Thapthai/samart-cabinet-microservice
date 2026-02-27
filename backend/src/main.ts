@@ -14,10 +14,17 @@ async function bootstrap() {
     }),
   );
 
-  // CORS: อนุญาตให้ frontend (localhost:3100 หรือ origin จาก env) เรียก API ได้
+  // CORS: อนุญาตให้ frontend (origin จาก env หรือ localhost / host.docker.internal) เรียก API ได้
   const allowedOrigins = process.env.CORS_ORIGIN
     ? process.env.CORS_ORIGIN.split(',').map((o) => o.trim())
-    : ['http://localhost:3100', 'http://127.0.0.1:3100'];
+    : [
+        'http://localhost:3100',
+        'http://127.0.0.1:3100',
+        'http://localhost:4100',
+        'http://127.0.0.1:4100',
+        'http://host.docker.internal:3100',
+        'http://host.docker.internal:4100',
+      ];
   app.enableCors({
     origin: allowedOrigins,
     methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],

@@ -82,6 +82,22 @@ Frontend จะ listen ที่ **port 4100**
 
 ---
 
+## GET http://host.docker.internal:4000/... ล้มเหลว หรือ CORS / net::ERR_
+
+ถ้า Frontend ตั้ง `NEXT_PUBLIC_API_URL=http://host.docker.internal:4000/smart-cabinet-cu/api/v1` แล้วเบราว์เซอร์เรียก API ไม่ได้:
+
+1. **CORS** — ให้ Backend อนุญาต origin ที่ใช้เปิดแอป (เช่น `http://host.docker.internal:4100`)  
+   โค้ด Backend ใส่ `http://host.docker.internal:3100` และ `http://host.docker.internal:4100` ใน CORS แล้ว หรือตั้งใน Backend `.env`:  
+   `CORS_ORIGIN=http://localhost:4100,http://host.docker.internal:4100`  
+   จากนั้น restart Backend
+
+2. **เบราว์เซอร์ resolve host.docker.internal ไม่ได้** — บนบางเครื่อง (Windows/Linux) เบราว์เซอร์อาจ resolve `host.docker.internal` ไม่ได้ ให้ลองเปิดแอปด้วย **http://localhost:4100/smart-cabinet-cu** แทน (ยังใช้ `NEXT_PUBLIC_API_URL=http://host.docker.internal:4000/...` ได้ เพราะ request จากเบราว์เซอร์ไปที่ host)
+
+3. **Backend ไม่รันหรือ port 4000 ไม่ได้ map** — ตรวจว่า Backend container รันและ map port 4000:4000 แล้ว และจากเครื่อง host เรียกได้:  
+   `curl http://localhost:4000/smart-cabinet-cu/api/v1/health`
+
+---
+
 ## คำสั่งอื่นที่ใช้บ่อย
 
 ```bash
