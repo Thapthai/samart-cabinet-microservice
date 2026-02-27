@@ -3,7 +3,8 @@
 # ================================
 # ใช้จากโฟลเดอร์ frontend: docker compose -f docker/docker-compose.yml up -d
 # ตัวแปร env ตรงกับ frontend/.env.example (คัดลอกเป็น .env หรือ .env.local)
-# หมายเหตุ: version ถูกลบแล้ว (Docker Compose V2 ไม่ใช้แล้ว)
+# ตัวแปร env ตรงกับ frontend/.env.example (คัดลอกเป็น .env หรือ .env.local)
+# ไม่ใช้ shared network — ตั้ง NEXT_PUBLIC_API_URL เป็น IP โฮสต์ เช่น http://10.11.9.84:4000/smart-cabinet-cu/api/v1
 
 services:
   frontend:
@@ -27,9 +28,6 @@ services:
       - NEXT_PUBLIC_BASE_PATH=${NEXT_PUBLIC_BASE_PATH:-/smart-cabinet-cu}
       - NEXTAUTH_SECRET=${NEXTAUTH_SECRET}
       - NEXTAUTH_URL=${NEXTAUTH_URL:-http://localhost:4100/smart-cabinet-cu}
-    networks:
-      - default
-      - smart-cabinet-network
     healthcheck:
       test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:4100/smart-cabinet-cu"]
       interval: 30s
@@ -40,5 +38,3 @@ services:
 networks:
   default:
     name: frontend-network
-  smart-cabinet-network:
-    external: true

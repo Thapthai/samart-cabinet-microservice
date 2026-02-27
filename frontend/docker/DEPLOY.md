@@ -127,45 +127,11 @@ docker compose -f docker/docker-compose.yml --env-file .env up -d
 
 1. **ตั้ง `NEXTAUTH_SECRET`** ใน `frontend/.env` (เช่น `openssl rand -base64 32` แล้วใส่ค่าที่ได้)
 2. **ตั้ง `NEXT_PUBLIC_API_URL` ให้ container ไปถึง Backend ได้**
-   - ถ้า Backend รันบน **โฮสต์เดียวกัน** (ไม่ใช่ใน Docker): ใช้ **IP ของโฮสต์** ไม่ใช่ `localhost`  
-     ตัวอย่าง: `NEXT_PUBLIC_API_URL=http://10.11.9.84:4000/smart-cabinet-cu/api/v1` (แทน 10.11.9.84 ด้วย IP จริงของเครื่องรัน Backend)
-   - ถ้า Backend รันใน Docker Compose อีก stack: ต้องให้ frontend กับ backend อยู่ network เดียวกัน แล้วใช้ชื่อ service เช่น `http://backend:4000/smart-cabinet-cu/api/v1`
+   - ใช้ **IP โฮสต์** (เครื่องที่รัน Backend) ไม่ใช่ `localhost`  
+     ตัวอย่าง: `NEXT_PUBLIC_API_URL=http://10.11.9.84:4000/smart-cabinet-cu/api/v1` (แทน 10.11.9.84 ด้วย IP จริงของเครื่อง)
+   - ถ้า Backend อยู่คนละเครื่อง ใช้ IP เครื่อง Backend
 3. รัน Compose ด้วย **`--env-file .env`** เพื่อให้อ่านค่าจาก `.env`:  
    `docker compose -f docker/docker-compose.yml --env-file .env up -d --build`
-
----
-
-## ให้ Frontend กับ Backend อยู่ network เดียวกัน (ใช้ชื่อ `backend`)
-
-ถ้า Frontend และ Backend รันคนละ Compose (คนละโฟลเดอร์) โดยปกติจะอยู่คนละ network จึงต่อกันด้วยชื่อ service ไม่ได้ ต้องใช้ IP โฮสต์
-
-ถ้าอยากให้ Frontend เรียก Backend ด้วย **`http://backend:4000/...`** ให้ใช้ **shared external network** แบบนี้:
-
-1. **สร้าง network (ทำครั้งเดียว)** บนเครื่องที่รัน Docker:
-   ```bash
-   docker network create smart-cabinet-net
-   ```
-
-2. **รัน Backend** (จากโฟลเดอร์ backend):
-   ```bash
-   cd /path/to/samart-cabinet-cu-app/backend
-   docker compose -f docker/docker-compose.yml --env-file .env up -d --build
-   ```
-
-3. **ตั้งค่า Frontend** ใน `frontend/.env`:
-   ```env
-   NEXT_PUBLIC_API_URL=http://backend:4000/smart-cabinet-cu/api/v1
-   NEXTAUTH_URL=http://10.11.9.84:4100/smart-cabinet-cu
-   ```
-   (ใช้ IP จริงแทน 10.11.9.84 ตามที่ผู้ใช้เข้าแอป)
-
-4. **รัน Frontend** (จากโฟลเดอร์ frontend):
-   ```bash
-   cd /path/to/samart-cabinet-cu-app/frontend
-   docker compose -f docker/docker-compose.yml --env-file .env up -d --build
-   ```
-
-ทั้ง Backend และ Frontend compose ใช้ network `smart-cabinet-net` (external) แล้ว จึงเห็นกันด้วยชื่อ service `backend` / `frontend` และช่วยลดปัญหา 401 / ECONNREFUSED จากที่ Frontend ต่อ Backend ไม่ถึง
 
 ---
 

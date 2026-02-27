@@ -68,6 +68,7 @@ RUN addgroup --system --gid 1001 nodejs && \
 ENV NODE_ENV=production
 ENV NEXT_TELEMETRY_DISABLED=1
 ENV PORT=4100
+ENV HOSTNAME=0.0.0.0
 
 # Runtime env (ต้องตรงกับ build time สำหรับ Next.js public vars)
 ARG NEXT_PUBLIC_API_URL=http://localhost:3000/smart-cabinet-cu/api/v1
@@ -97,6 +98,6 @@ EXPOSE 4100
 HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
     CMD node -e "require('http').get('http://localhost:4100/smart-cabinet-cu', (r) => {process.exit(r.statusCode === 200 ? 0 : 1)})"
 
-# Start application
-CMD ["node", "server.js"]
+# Start application — ใช้ 0.0.0.0 เพื่อให้รับ connection จากนอก container
+CMD ["sh", "-c", "HOSTNAME=0.0.0.0 node server.js"]
 
