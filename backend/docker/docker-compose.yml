@@ -3,7 +3,7 @@
 # ================================
 # ใช้จากโฟลเดอร์ backend: docker compose -f docker/docker-compose.yml up -d
 # ต้องมี .env ใน backend/ (DATABASE_URL, JWT_SECRET ฯลฯ)
-# ถ้าใช้ shared network กับ frontend: สร้าง network ก่อน → docker network create smart-cabinet-net
+# รัน backend ก่อน → จะสร้าง network smart-cabinet-network ให้ จากนั้นรัน frontend จะต่อ network นี้ได้
 
 services:
   backend:
@@ -20,7 +20,7 @@ services:
       - "4000:4000"
     networks:
       - default
-      - smart-cabinet-net
+      - smart-cabinet-network
     environment:
       - NODE_ENV=production
       - PORT=4000
@@ -42,5 +42,6 @@ services:
       start_period: 40s
 
 networks:
-  smart-cabinet-net:
-    external: true
+  smart-cabinet-network:
+    name: smart-cabinet-network
+    driver: bridge

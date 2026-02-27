@@ -28,7 +28,7 @@ services:
       - NEXTAUTH_URL=${NEXTAUTH_URL:-http://localhost:4100/smart-cabinet-cu}
     networks:
       - default
-      - smart-cabinet-net
+      - smart-cabinet-network
     healthcheck:
       test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:4100/smart-cabinet-cu"]
       interval: 30s
@@ -39,5 +39,5 @@ services:
 networks:
   default:
     name: frontend-network
-  smart-cabinet-net:
+  smart-cabinet-network:
     external: true
