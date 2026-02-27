@@ -1489,4 +1489,28 @@ export const cabinetDepartmentApi = {
   },
 };
 
+// =========================== Weighing API (ItemSlotInCabinet) ===========================
+export const weighingApi = {
+  getAll: async (params?: { page?: number; limit?: number; itemcode?: string; stockId?: number }): Promise<{ success: boolean; data: any[]; pagination: { page: number; limit: number; total: number; totalPages: number } }> => {
+    const response = await api.get('/weighing', { params });
+    return response.data;
+  },
+
+  getByItemcode: async (itemcode: string): Promise<{ success: boolean; data: any }> => {
+    const response = await api.get(`/weighing/${encodeURIComponent(itemcode)}`);
+    return response.data;
+  },
+
+  getDetailsByItemcode: async (itemcode: string, params?: { page?: number; limit?: number }): Promise<{ success: boolean; data: any[]; pagination: { page: number; limit: number; total: number; totalPages: number } }> => {
+    const response = await api.get(`/weighing/${encodeURIComponent(itemcode)}/details`, { params });
+    return response.data;
+  },
+
+  /** รายการ Detail ตาม Sign: เบิก = '-', เติม = '+' */
+  getDetailsBySign: async (params: { sign: '-' | '+'; page?: number; limit?: number; itemcode?: string; stockId?: number }): Promise<{ success: boolean; data: any[]; pagination: { page: number; limit: number; total: number; totalPages: number } }> => {
+    const response = await api.get('/weighing/by-sign', { params: { ...params, sign: params.sign } });
+    return response.data;
+  },
+};
+
 export default api;

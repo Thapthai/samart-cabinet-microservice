@@ -12,6 +12,7 @@ import { EmailModule } from './email/email.module';
 import { PrismaModule } from './prisma/prisma.module';
 import { DateTimeModule } from './utils/date-time/date-time.module';
 import { StaffModule } from './staff/staff.module';
+import { WeighingModule } from './weighing/weighing.module';
 
 @Module({
   imports: [
@@ -29,6 +30,7 @@ import { StaffModule } from './staff/staff.module';
     ReportServiceModule,
     DateTimeModule,
     StaffModule,
+    WeighingModule,
   ],
   controllers: [AppController],
   providers: [AppService],

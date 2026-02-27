@@ -68,25 +68,25 @@ const mainMenuItems: MenuItem[] = [
         icon: Network,
         description: "จัดการตู้ Cabinet และเชื่อมโยงกับแผนก",
       },
-      {
-        name: "สต๊อกอุปกรณ์ในตู้",
-        href: "/admin/items",
-        description: "เมนูสต๊อกอุปกรณ์ที่มีในตู้ SmartCabinet",
-        icon: Package,
-      },
+      // {
+      //   name: "สต๊อกอุปกรณ์ในตู้",
+      //   href: "/admin/items",
+      //   description: "เมนูสต๊อกอุปกรณ์ที่มีในตู้ SmartCabinet",
+      //   icon: Package,
+      // },
 
-      {
-        name: "เบิกอุปกรณ์จากตู้",
-        href: "/admin/dispense-from-cabinet",
-        description: "การเบิกอุปกรณ์จากตู้ SmartCabinet",
-        icon: FileBarChart,
-      },
-      {
-        name: "เติมอุปกรณ์เข้าตู้",
-        href: "/admin/return-to-cabinet-report",
-        description: "การเติมอุปกรณ์เข้าตู้ SmartCabinet",
-        icon: FileBarChart,
-      },
+      // {
+      //   name: "เบิกอุปกรณ์จากตู้",
+      //   href: "/admin/dispense-from-cabinet",
+      //   description: "การเบิกอุปกรณ์จากตู้ SmartCabinet",
+      //   icon: FileBarChart,
+      // },
+      // {
+      //   name: "เติมอุปกรณ์เข้าตู้",
+      //   href: "/admin/return-to-cabinet-report",
+      //   description: "การเติมอุปกรณ์เข้าตู้ SmartCabinet",
+      //   icon: FileBarChart,
+      // },
       // {
       //   name: "เบิกอุปกรณ์กับคนไข้",
       //   href: "/admin/medical-supplies",
@@ -107,6 +107,27 @@ const mainMenuItems: MenuItem[] = [
       //   description: "เปรียบเทียบการเบิกกับการใช้งานตามเวชภัณฑ์",
       //   icon: FileBarChart,
       // },
+
+
+      {
+        name: "สต๊อกอุปกรณ์ในตู้ ",
+        href: "/admin/weighing",
+        description: "เมนูสต๊อกอุปกรณ์ที่มีในตู้ Weighing",
+        icon: Package,
+      },
+
+      {
+        name: "เบิกอุปกรณ์จากตู้",
+        href: "/admin/weighing-dispense",
+        description: "การเบิกอุปกรณ์จากตู้ Weighing",
+        icon: FileBarChart,
+      },
+      {
+        name: "เติมอุปกรณ์เข้าตู้",
+        href: "/admin/weighing-refill",
+        description: "การเติมอุปกรณ์เข้าตู้ Weighing",
+        icon: FileBarChart,
+      },
 
     ],
   },

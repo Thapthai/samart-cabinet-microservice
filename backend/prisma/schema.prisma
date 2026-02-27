@@ -623,6 +623,7 @@ model cabinet {
   itemStocks              ItemStock[]
   supplyItemReturnRecords SupplyItemReturnRecord[]
   cabinetItemSettings     CabinetItemSetting[]
+  itemSlotInCabinet       ItemSlotInCabinet[]
 
   @@map("app_microservice_cabinets")
 }
@@ -659,4 +660,39 @@ model cabinetDepartment {
   department Department? @relation(fields: [department_id], references: [ID])
 
   @@map("app_microservice_cabinet_departments")
+}
+
+model ItemSlotInCabinet {
+  id       Int    @id @default(autoincrement())
+  itemcode String @unique() @map("itemcode") @db.VarChar(25)
+  StockID  Int    @map("StockID")
+  SlotNo   Int    @map("SlotNo")
+  Sensor   Int    @map("Sensor")
+  Qty      Int    @map("Qty")
+
+  // Relations
+  itemSlotInCabinetDetail ItemSlotInCabinetDetail[]
+  cabinet cabinet? @relation(fields: [StockID], references: [stock_id])
+
+  @@map("itemslotincabinet")
+}
+
+model ItemSlotInCabinetDetail {
+  id         Int      @id @default(autoincrement())
+  Sel        Int      @map("Sel")
+  itemcode   String   @map("itemcode") @db.VarChar(25)
+  HnCode     String   @map("HnCode") @db.VarChar(25)
+  StockID    Int      @map("StockID")
+  SlotNo     Int      @map("SlotNo")
+  Sensor     Int      @map("Sensor")
+  Qty        Int      @map("Qty")
+  ModifyDate DateTime @map("ModifyDate")
+  UserID     Int      @map("UserID")
+  IsDeproom  String   @map("IsDeproom") @db.VarChar(25)
+  Sign       String   @map("Sign")
+
+  // Relations
+  itemSlotInCabinet ItemSlotInCabinet @relation(fields: [itemcode], references: [itemcode])
+
+  @@map("itemslotincabinet_detail")
 }
