@@ -25,7 +25,11 @@ cd /path/to/samart-cabinet-cu-app/frontend
 - **`NEXT_PUBLIC_API_URL`** — **เมื่อรันใน Docker อย่าใช้ `localhost`** เพราะจากใน container แล้ว localhost คือตัว container เอง ใช้ **IP โฮสต์** (เช่น `http://10.11.9.84:4000/smart-cabinet-cu/api/v1`) หรือถ้า Backend อยู่คนละเครื่องใช้ IP เครื่อง Backend
 - `NEXT_PUBLIC_FIREBASE_*` — ถ้าใช้ Firebase (ดูใน `.env.example`)
 
-อ้างอิงโครงและ key จาก **`.env.example`**
+อ้างอิงโครงและ key จาก **`.env.example`**  
+
+**ใช้บนเซิร์ฟเวอร์:** มีไฟล์ **`.env.sv`** ตั้งค่าไว้สำหรับ deploy ที่ IP 10.11.9.84 แล้ว — คัดลอกเป็น `.env` แล้วเติม `NEXTAUTH_SECRET` กับ Firebase (ถ้าใช้):  
+`cp .env.sv .env`  
+หรือรันด้วย `--env-file .env.sv` ได้เลย (แก้ `NEXTAUTH_SECRET` ใน .env.sv ก่อน)
 
 ### 3. Build และรัน
 
@@ -82,6 +86,19 @@ Frontend จะ listen ที่ **port 4100**
 
 ---
 
+## Build error: TypeError: Invalid URL (NEXTAUTH_URL)
+
+ถ้า build ล้มเหลวด้วยข้อความประมาณ `TypeError: Invalid URL` และ `input: 'http://10.11.9.84::4100/smart-cabinet-cu'`:
+
+- **สาเหตุ:** ใน `NEXTAUTH_URL` ใส่ **colon สองตัว** (`::`) แทน colon เดียว (`:`)
+- **แก้:** เปิด `frontend/.env` แล้วแก้เป็น colon เดียว เช่น  
+  - ผิด: `NEXTAUTH_URL=http://10.11.9.84::4100/smart-cabinet-cu`  
+  - ถูก: `NEXTAUTH_URL=http://10.11.9.84:4100/smart-cabinet-cu`
+
+จากนั้นรัน build ใหม่: `docker compose -f docker/docker-compose.yml --env-file .env up -d --build`
+
+---
+
 ## GET http://host.docker.internal:4000/... ล้มเหลว หรือ CORS / net::ERR_
 
 ถ้า Frontend ตั้ง `NEXT_PUBLIC_API_URL=http://host.docker.internal:4000/smart-cabinet-cu/api/v1` แล้วเบราว์เซอร์เรียก API ไม่ได้:
@@ -117,23 +134,39 @@ docker compose -f docker/docker-compose.yml logs -f frontend
 
 ถ้าเข้าแอปด้วย **IP หรือโดเมนจริง** (เช่น `http://10.11.9.84:4100/smart-cabinet-cu`) แล้วกด Login แล้วได้ **401 Unauthorized** ที่ `POST .../api/auth/callback/credentials` แปลว่า NextAuth ไปเรียก Backend ไม่ถูกหรือ Backend ตอบ 401
 
-ให้ตั้งค่าใน **`frontend/.env`** ให้ตรงกับเครื่องที่ deploy (แทน localhost):
+ให้ตั้งค่าดังนี้:
+
+### 1) Frontend — `frontend/.env`
 
 | ตัวแปร | ตัวอย่างเมื่อเข้าแอปที่ `http://10.11.9.84:4100` |
 |--------|-----------------------------------------------|
 | `NEXTAUTH_URL` | `http://10.11.9.84:4100/smart-cabinet-cu` |
 | `NEXT_PUBLIC_API_URL` | `http://10.11.9.84:4000/smart-cabinet-cu/api/v1` |
+| **`BACKEND_API_URL`** | **`http://10.11.9.84:4000/smart-cabinet-cu/api/v1`** |
 
-- **NEXTAUTH_URL** = URL ที่ผู้ใช้เปิดแอป (ต้องตรงกับที่พิมพ์ในเบราว์เซอร์ รวม port และ basePath)
-- **NEXT_PUBLIC_API_URL** = URL ที่ **frontend container** ใช้เรียก Backend (ถ้า Backend อยู่เครื่องเดียวกัน ใช้ IP โฮสต์ + port 4000 ถ้า Backend รันที่ 4000)
+- **BACKEND_API_URL** = ให้ NextAuth (รันใน container) เรียก Backend ได้  
+  - บน **Linux server** ไม่มี `host.docker.internal` → ใช้ **IP โฮสต์** เดียวกับที่เข้าแอป เช่น `http://10.11.9.84:4000/smart-cabinet-cu/api/v1`  
+  - บน Windows/Mac Docker Desktop ใช้ `http://host.docker.internal:4000/smart-cabinet-cu/api/v1` ได้
 
-จากนั้น **รัน Compose ใหม่** ให้อ่าน env ล่าสุด (ไม่จำเป็นต้อง build ใหม่ถ้าแก้แค่ .env):
+### 2) Backend — อนุญาต CORS จาก origin ที่เปิดแอป
 
-```bash
-docker compose -f docker/docker-compose.yml --env-file .env up -d
+ถ้าเข้าแอปที่ `http://10.11.9.84:4100` ให้ตั้งใน **`backend/.env`**:
+
+```env
+CORS_ORIGIN=http://10.11.9.84:4100,http://localhost:4100
 ```
 
-ตรวจสอบว่า Backend รันที่ port 4000 และเข้าถึงได้จากเครื่องที่รัน Frontend (ถ้า Backend อยู่คนละเครื่อง ใช้ IP เครื่อง Backend แทน `10.11.9.84`)
+จากนั้น **restart Backend** แล้ว **restart Frontend** (ให้อ่าน env ล่าสุด):
+
+```bash
+# backend
+cd backend && docker compose -f docker/docker-compose.yml up -d
+
+# frontend
+cd frontend && docker compose -f docker/docker-compose.yml --env-file .env up -d
+```
+
+ตรวจสอบว่า Backend รันที่ port 4000 และจากเครื่องที่รัน Frontend เรียกได้: `curl http://10.11.9.84:4000/smart-cabinet-cu/api/v1/health`
 
 ---
 
