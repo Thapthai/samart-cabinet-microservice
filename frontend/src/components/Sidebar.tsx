@@ -87,26 +87,26 @@ const mainMenuItems: MenuItem[] = [
         description: "การเติมอุปกรณ์เข้าตู้ SmartCabinet",
         icon: FileBarChart,
       },
-      {
-        name: "เบิกอุปกรณ์กับคนไข้",
-        href: "/admin/medical-supplies",
-        description: "รายการเบิกอุปกรณ์กับคนไข้",
-        icon: ClipboardList,
-        submenu: [
-          {
-            name: "แจ้งอุปกรณ์ที่ไม่ถูกใช้งาน",
-            href: "/admin/medical-supplies/return",
-            description: "แจ้งอุปกรณ์ที่ไม่ถูกใช้งาน / ชำรุด",
-            icon: RotateCcw,
-          },
-        ],
-      },
-      {
-        name: "เปรียบเทียบตามเวชภัณฑ์",
-        href: "/admin/item-comparison",
-        description: "เปรียบเทียบการเบิกกับการใช้งานตามเวชภัณฑ์",
-        icon: FileBarChart,
-      },
+      // {
+      //   name: "เบิกอุปกรณ์กับคนไข้",
+      //   href: "/admin/medical-supplies",
+      //   description: "รายการเบิกอุปกรณ์กับคนไข้",
+      //   icon: ClipboardList,
+      //   submenu: [
+      //     {
+      //       name: "แจ้งอุปกรณ์ที่ไม่ถูกใช้งาน",
+      //       href: "/admin/medical-supplies/return",
+      //       description: "แจ้งอุปกรณ์ที่ไม่ถูกใช้งาน / ชำรุด",
+      //       icon: RotateCcw,
+      //     },
+      //   ],
+      // },
+      // {
+      //   name: "เปรียบเทียบตามเวชภัณฑ์",
+      //   href: "/admin/item-comparison",
+      //   description: "เปรียบเทียบการเบิกกับการใช้งานตามเวชภัณฑ์",
+      //   icon: FileBarChart,
+      // },
 
     ],
   },
@@ -163,13 +163,13 @@ const mainMenuItems: MenuItem[] = [
       },
     ],
   },
-  {
-    name: "ประวัติการใช้งาน",
-    href: "/admin/logs-history",
-    icon: ClipboardList,
-    description: "ประวัติการใช้งานระบบ",
+  // {
+  //   name: "ประวัติการใช้งาน",
+  //   href: "/admin/logs-history",
+  //   icon: ClipboardList,
+  //   description: "ประวัติการใช้งานระบบ",
 
-  }
+  // }
 ];
 
 
