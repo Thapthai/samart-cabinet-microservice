@@ -232,11 +232,11 @@ export default function WeighingDepartmentsPage() {
   return (
     <ProtectedRoute>
       <AppLayout fullWidth>
-        <div className="space-y-6">
+        <div className="space-y-6 pb-6">
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
             <div className="flex items-center gap-4">
-              <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-br from-blue-500 to-purple-600 text-white shadow-lg">
-                <Network className="h-6 w-6" />
+              <div className="p-3 bg-blue-100 rounded-xl shadow-sm">
+                <Network className="h-7 w-7 text-blue-600" />
               </div>
               <div>
                 <h1 className="text-2xl font-bold tracking-tight text-gray-900">
@@ -250,11 +250,24 @@ export default function WeighingDepartmentsPage() {
             <Button
               onClick={handleCreate}
               size="lg"
-              className="bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 text-white shadow-md hover:shadow-lg transition-shadow shrink-0"
+              className="bg-blue-600 hover:bg-blue-700 text-white shadow-sm shrink-0"
             >
               <Network className="mr-2 h-5 w-5" />
               เพิ่มการเชื่อมโยง
             </Button>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="bg-blue-50/80 border border-blue-100 p-5 rounded-xl shadow-sm">
+              <p className="text-sm text-blue-600 font-medium">จำนวนการเชื่อมโยง</p>
+              <p className="text-2xl font-bold text-blue-900 mt-0.5">{filteredMappings.length}</p>
+            </div>
+            <div className="bg-slate-50/80 border border-slate-200 p-5 rounded-xl shadow-sm">
+              <p className="text-sm text-slate-600 font-medium">สถานะใช้งาน</p>
+              <p className="text-2xl font-bold text-slate-900 mt-0.5">
+                {filteredMappings.filter((m) => m.status === "ACTIVE").length} / {filteredMappings.length}
+              </p>
+            </div>
           </div>
 
           <FilterSection

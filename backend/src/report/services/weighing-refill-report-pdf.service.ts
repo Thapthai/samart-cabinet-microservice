@@ -152,7 +152,7 @@ export class WeighingRefillReportPdfService {
           headers.forEach((h, i) => {
             doc.text(h, x + cellPadding, y + 8, {
               width: Math.max(2, colWidths[i] - cellPadding * 2),
-              align: i === 1 || i === 2 ? 'left' : 'center',
+              align: i === 1 || i === 2 ? 'center' : 'center',
             });
             if (i < headers.length - 1) {
               doc.save();

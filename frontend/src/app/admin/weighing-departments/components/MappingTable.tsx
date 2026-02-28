@@ -61,6 +61,10 @@ export default function MappingTable({ mappings, onEdit, onDelete }: MappingTabl
   const endIndex = startIndex + itemsPerPage;
   const currentMappings = mappings.slice(startIndex, endIndex);
 
+  /** สล็อต 1 = ใน, 2 = นอก */
+  const formatSlotDisplay = (value: number | null | undefined) =>
+    value === 1 ? "ใน" : value === 2 ? "นอก" : value != null ? String(value) : "-";
+
   const handleDropdownToggle = async (e: React.MouseEvent, mapping: CabinetDepartment) => {
     e.stopPropagation();
     const cabinetId = mapping.cabinet_id;
@@ -142,23 +146,23 @@ export default function MappingTable({ mappings, onEdit, onDelete }: MappingTabl
                   <span className="text-gray-500">รหัส:</span>
                   <span className="ml-2 font-medium font-mono">{row.itemcode}</span>
                 </div>
-                <div className="w-fit md:min-w-[200px]">
+                <div className="w-fit md:min-w-[500px]">
                   <span className="text-gray-500">ชื่อสินค้า:</span>
                   <span className="ml-2 font-medium">
                     {row.item?.itemname || row.item?.Alternatename || "-"}
                   </span>
                 </div>
                 <div>
-                  <span className="text-gray-500">SlotNo:</span>
+                  <span className="text-gray-500">ช่อง:</span>
                   <span className="ml-2 font-medium">{row.SlotNo}</span>
                 </div>
                 <div>
-                  <span className="text-gray-500">Sensor:</span>
-                  <span className="ml-2 font-medium">{row.Sensor}</span>
+                  <span className="text-gray-500">สล็อต:</span>
+                  <span className="ml-2 font-medium">{formatSlotDisplay(row.Sensor)}</span>
                 </div>
                 <div>
-                  <span className="text-gray-500">Qty:</span>
-                  <span className="ml-2 font-medium">{row.Qty}</span>
+                  <span className="text-gray-500">จำนวน:</span>
+                  <span className="ml-2 font-medium tabular-nums">{row.Qty}</span>
                 </div>
               </div>
             </div>
@@ -177,9 +181,9 @@ export default function MappingTable({ mappings, onEdit, onDelete }: MappingTabl
 
   return (
     <>
-      <Card className="border-slate-200/80 shadow-sm overflow-hidden rounded-xl">
+      <Card className="shadow-sm border-gray-200/80 overflow-hidden rounded-xl">
         <CardHeader className="border-b border-slate-100 bg-slate-50/50">
-          <CardTitle className="text-slate-800 flex items-center gap-2">
+          <CardTitle className="text-lg text-slate-800 flex items-center gap-2">
             <Package className="h-5 w-5 text-blue-600" />
             รายการเชื่อมโยง ({mappings.length})
           </CardTitle>
@@ -210,9 +214,8 @@ export default function MappingTable({ mappings, onEdit, onDelete }: MappingTabl
                   currentMappings.map((mapping, index) => (
                     <Fragment key={mapping.id}>
                       <TableRow
-                        className={`cursor-pointer transition-colors ${
-                          selectedRow?.id === mapping.id ? "bg-blue-50/80" : "hover:bg-slate-50/80"
-                        }`}
+                        className={`cursor-pointer transition-colors ${selectedRow?.id === mapping.id ? "bg-blue-50/80" : "hover:bg-slate-50/80"
+                          }`}
                         onClick={() => handleRowClick(mapping)}
                       >
                         <TableCell onClick={(e) => e.stopPropagation()}>
@@ -227,14 +230,13 @@ export default function MappingTable({ mappings, onEdit, onDelete }: MappingTabl
                             )}
                           </button>
                         </TableCell>
-                        <TableCell>{startIndex + index + 1}</TableCell>
-                        <TableCell>{mapping.cabinet?.cabinet_name || "-"}</TableCell>
-                        <TableCell>{mapping.department?.DepName || "-"}</TableCell>
+                        <TableCell className="text-center tabular-nums">{startIndex + index + 1}</TableCell>
+                        <TableCell className="font-medium">{mapping.cabinet?.cabinet_name || "-"}</TableCell>
+                        <TableCell className="text-gray-700">{mapping.department?.DepName || "-"}</TableCell>
                         <TableCell className="text-center">
                           <span className="font-medium text-slate-700">
                             เบิก {mapping.weighing_dispense_count ?? 0} / เติม {mapping.weighing_refill_count ?? 0}
                           </span>
-                          <span className="text-xs text-slate-500 ml-1">(จาก Sign - / +)</span>
                         </TableCell>
                         <TableCell>
                           <Badge
@@ -293,8 +295,8 @@ export default function MappingTable({ mappings, onEdit, onDelete }: MappingTabl
           </div>
 
           {totalPages > 1 && (
-            <div className="flex items-center justify-between mt-4 px-4 pb-4">
-              <div className="text-sm text-gray-600">
+            <div className="flex items-center justify-between mt-4 px-4 pb-4 gap-4 flex-wrap">
+              <div className="text-sm text-muted-foreground">
                 แสดง {startIndex + 1}-{Math.min(endIndex, mappings.length)} จาก {mappings.length} รายการ
               </div>
               <div className="flex gap-2">
@@ -303,6 +305,7 @@ export default function MappingTable({ mappings, onEdit, onDelete }: MappingTabl
                   size="sm"
                   onClick={() => setCurrentPage((prev) => Math.max(1, prev - 1))}
                   disabled={currentPage === 1}
+                  className="shadow-sm"
                 >
                   ก่อนหน้า
                 </Button>
@@ -323,6 +326,7 @@ export default function MappingTable({ mappings, onEdit, onDelete }: MappingTabl
                   size="sm"
                   onClick={() => setCurrentPage((prev) => Math.min(totalPages, prev + 1))}
                   disabled={currentPage === totalPages}
+                  className="shadow-sm"
                 >
                   ถัดไป
                 </Button>

@@ -200,30 +200,30 @@ export default function WeighingRefillPage() {
   return (
     <ProtectedRoute>
       <AppLayout fullWidth>
-        <div className="space-y-6">
-          <div className="flex items-center gap-3">
-            <div className="p-2 bg-green-100 rounded-lg">
-              <RotateCcw className="h-6 w-6 text-green-600" />
+        <div className="space-y-6 pb-6">
+          <div className="flex items-center gap-4">
+            <div className="p-3 bg-green-100 rounded-xl shadow-sm">
+              <RotateCcw className="h-7 w-7 text-green-600" />
             </div>
             <div>
-              <h1 className="text-2xl font-bold text-gray-900">เติมอุปกรณ์เข้าตู้ Weighing</h1>
-              <p className="text-sm text-gray-500 mt-1">การเติมอุปกรณ์เข้าตู้ Weighing</p>
+              <h1 className="text-2xl font-bold text-gray-900 tracking-tight">เติมอุปกรณ์เข้าตู้ Weighing</h1>
+              <p className="text-sm text-gray-500 mt-0.5">การเติมอุปกรณ์เข้าตู้ Weighing</p>
             </div>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="bg-green-50 p-4 rounded-lg">
+            <div className="bg-green-50/80 border border-green-100 p-5 rounded-xl shadow-sm">
               <p className="text-sm text-green-600 font-medium">รายการทั้งหมด</p>
-              <p className="text-2xl font-bold text-green-900">{totalItems}</p>
+              <p className="text-2xl font-bold text-green-900 mt-0.5">{totalItems}</p>
             </div>
-            <div className="bg-blue-50 p-4 rounded-lg">
+            <div className="bg-blue-50/80 border border-blue-100 p-5 rounded-xl shadow-sm">
               <p className="text-sm text-blue-600 font-medium">จำนวนรวม (Qty)</p>
-              <p className="text-2xl font-bold text-blue-900">{totalQty}</p>
+              <p className="text-2xl font-bold text-blue-900 mt-0.5">{totalQty}</p>
             </div>
           </div>
 
-          <Card className="border-green-100 bg-gradient-to-br from-slate-50 to-green-50/30">
-            <CardContent className="pt-6">
+          <Card className="border-green-100/80 bg-gradient-to-br from-slate-50 to-green-50/40 shadow-sm overflow-hidden">
+            <CardContent className="pt-6 pb-6">
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 items-end">
                 <div className="space-y-1.5">
                   <label className="text-sm font-medium text-gray-700">รหัสสินค้า (itemcode)</label>
@@ -292,18 +292,19 @@ export default function WeighingRefillPage() {
             </CardContent>
           </Card>
 
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0">
-              <CardTitle>รายการเติมอุปกรณ์เข้าตู้ Weighing</CardTitle>
-              <div className="flex items-center gap-2">
+          <Card className="shadow-sm border-gray-200/80 overflow-hidden">
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 border-b bg-slate-50/50">
+              <CardTitle className="text-lg">รายการเติมอุปกรณ์เข้าตู้ Weighing</CardTitle>
+              <div className="flex items-center gap-3 flex-wrap">
                 <span className="text-sm text-muted-foreground">ทั้งหมด {totalItems} รายการ</span>
-                <div className="flex flex-wrap items-center gap-2">
+                <div className="flex items-center gap-2">
                   <Button
                     type="button"
                     variant="outline"
                     size="sm"
                     onClick={handleDownloadWeighingRefillExcel}
                     disabled={exportLoading !== null}
+                    className="shadow-sm"
                   >
                     <Download className="h-4 w-4 mr-1.5" />
                     {exportLoading === 'excel' ? 'กำลังโหลด...' : 'Excel'}
@@ -314,6 +315,7 @@ export default function WeighingRefillPage() {
                     size="sm"
                     onClick={handleDownloadWeighingRefillPdf}
                     disabled={exportLoading !== null}
+                    className="shadow-sm"
                   >
                     <Download className="h-4 w-4 mr-1.5" />
                     {exportLoading === 'pdf' ? 'กำลังโหลด...' : 'PDF'}
@@ -321,53 +323,56 @@ export default function WeighingRefillPage() {
                 </div>
               </div>
             </CardHeader>
-            <CardContent>
+            <CardContent className="p-0">
               {loading ? (
-                <div className="py-8 text-center text-muted-foreground">กำลังโหลด...</div>
+                <div className="py-12 text-center text-muted-foreground">กำลังโหลด...</div>
               ) : items.length === 0 ? (
-                <div className="py-8 text-center text-muted-foreground">ไม่พบข้อมูล</div>
+                <div className="py-12 text-center text-muted-foreground">ไม่พบข้อมูล</div>
               ) : (
                 <>
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead className="w-[8%]">ลำดับ</TableHead>
-                        <TableHead className="w-[35%]">ชื่อสินค้า</TableHead>
-                        <TableHead className="w-[22%]">ผู้ดำเนินการ</TableHead>
-                        <TableHead className="w-[10%] text-center">จำนวน</TableHead>
-                        <TableHead className="w-[25%] text-right">วันที่แก้ไข</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {items.map((row, index) => (
-                        <TableRow key={row.id}>
-                          <TableCell className="text-muted-foreground">
-                            {(currentPage - 1) * itemsPerPage + index + 1}
-                          </TableCell>
-                          <TableCell className="max-w-[200px] truncate" title={row.item?.itemname ?? undefined}>
-                            {row.item?.itemname || row.item?.Alternatename || '-'}
-                          </TableCell>
-                          <TableCell className="text-sm">
-                            {row.userCabinet?.legacyUser?.employee
-                              ? [row.userCabinet.legacyUser.employee.FirstName, row.userCabinet.legacyUser.employee.LastName].filter(Boolean).join(' ') || '-'
-                              : '-'}
-                          </TableCell>
-                          <TableCell className="text-center">{row.Qty}</TableCell>
-                          <TableCell className="text-right">
-                            {formatDate(row.ModifyDate)}
-                          </TableCell>
-
+                  <div className="overflow-x-auto">
+                    <Table>
+                      <TableHeader>
+                        <TableRow className="bg-slate-100/80 hover:bg-slate-100/80 border-b">
+                          <TableHead className="w-14 text-center font-semibold">ลำดับ</TableHead>
+                          <TableHead className="min-w-[180px] font-semibold">ชื่อสินค้า</TableHead>
+                          <TableHead className="min-w-[120px] font-semibold">ผู้ดำเนินการ</TableHead>
+                          <TableHead className="w-20 text-center font-semibold">จำนวน</TableHead>
+                          <TableHead className="min-w-[140px] text-right font-semibold">วันที่แก้ไข</TableHead>
                         </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
+                      </TableHeader>
+                      <TableBody>
+                        {items.map((row, index) => (
+                          <TableRow key={row.id} className="hover:bg-slate-50/80">
+                            <TableCell className="text-center text-muted-foreground tabular-nums">
+                              {(currentPage - 1) * itemsPerPage + index + 1}
+                            </TableCell>
+                            <TableCell className="max-w-[220px] truncate font-medium" title={row.item?.itemname ?? undefined}>
+                              {row.item?.itemname || row.item?.Alternatename || '-'}
+                            </TableCell>
+                            <TableCell className="text-sm text-gray-700">
+                              {row.userCabinet?.legacyUser?.employee
+                                ? [row.userCabinet.legacyUser.employee.FirstName, row.userCabinet.legacyUser.employee.LastName].filter(Boolean).join(' ') || '-'
+                                : '-'}
+                            </TableCell>
+                            <TableCell className="text-center tabular-nums font-medium">{row.Qty}</TableCell>
+                            <TableCell className="text-right text-muted-foreground text-sm tabular-nums">
+                              {formatDate(row.ModifyDate)}
+                            </TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  </div>
                   {totalPages > 1 && (
-                    <Pagination
-                      currentPage={currentPage}
-                      totalPages={totalPages}
-                      onPageChange={handlePageChange}
-                      loading={loading}
-                    />
+                    <div className="px-4 pb-4">
+                      <Pagination
+                        currentPage={currentPage}
+                        totalPages={totalPages}
+                        onPageChange={handlePageChange}
+                        loading={loading}
+                      />
+                    </div>
                   )}
                 </>
               )}

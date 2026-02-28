@@ -9,6 +9,8 @@ export interface WeighingStockRow {
   cabinet_name: string;
   slot_no: number;
   sensor: number;
+  channel_display: string;
+  slot_display: string;
   qty: number;
 }
 
@@ -83,7 +85,7 @@ export class WeighingStockReportExcelService {
     worksheet.getCell('C4').font = { name: 'Tahoma', size: 11, bold: true, color: { argb: 'FF1A365D' } };
     worksheet.getCell('C4').fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFE8EDF2' } };
     worksheet.getCell('C4').alignment = { horizontal: 'center', vertical: 'middle' };
-    worksheet.mergeCells('E4:G4');
+    worksheet.mergeCells('E4:F4');
     worksheet.getCell('E4').value = `${filterLabels[2]}: ${filterValues[2]}`;
     worksheet.getCell('E4').font = { name: 'Tahoma', size: 11, bold: true, color: { argb: 'FF1A365D' } };
     worksheet.getCell('E4').fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFE8EDF2' } };
@@ -107,7 +109,7 @@ export class WeighingStockReportExcelService {
     data.data.forEach((row, idx) => {
       const excelRow = worksheet.getRow(dataRowIndex);
       const bg = idx % 2 === 0 ? 'FFFFFFFF' : 'FFF8F9FA';
-      [row.seq, row.item_name, row.cabinet_name, row.slot_no, row.sensor, row.qty].forEach((val, colIndex) => {
+      [row.seq, row.item_name, row.cabinet_name, row.channel_display ?? '-', row.slot_display ?? '-', row.qty].forEach((val, colIndex) => {
         const cell = excelRow.getCell(colIndex + 1);
         cell.value = val;
         cell.font = { name: 'Tahoma', size: 12, color: { argb: 'FF212529' } };
@@ -128,11 +130,11 @@ export class WeighingStockReportExcelService {
     worksheet.getRow(footerRow).height = 18;
 
     worksheet.getColumn(1).width = 13;
-    worksheet.getColumn(2).width = 45;
+    worksheet.getColumn(2).width = 55;
     worksheet.getColumn(3).width = 22;
-    worksheet.getColumn(4).width = 10;
-    worksheet.getColumn(5).width = 10;
-    worksheet.getColumn(6).width = 12;
+    worksheet.getColumn(4).width = 12;
+    worksheet.getColumn(5).width = 12;
+    worksheet.getColumn(6).width = 15;
 
     const buffer = await workbook.xlsx.writeBuffer();
     return Buffer.from(buffer);

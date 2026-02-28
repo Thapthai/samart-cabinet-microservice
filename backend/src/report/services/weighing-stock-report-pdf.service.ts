@@ -125,7 +125,7 @@ export class WeighingStockReportPdfService {
         const itemHeight = 28;
         const cellPadding = 4;
         const totalTableWidth = contentWidth;
-        const colPct = [0.08, 0.32, 0.18, 0.12, 0.12, 0.18];
+        const colPct = [0.08, 0.38, 0.18, 0.12, 0.12, 0.12];
         const colWidths = colPct.map((p) => Math.floor(totalTableWidth * p));
         let sumW = colWidths.reduce((a, b) => a + b, 0);
         if (sumW < totalTableWidth) colWidths[1] += totalTableWidth - sumW;
@@ -139,7 +139,7 @@ export class WeighingStockReportPdfService {
           headers.forEach((h, i) => {
             doc.text(h, x + cellPadding, y + 8, {
               width: Math.max(2, colWidths[i] - cellPadding * 2),
-              align: i === 1 || i === 2 ? 'left' : 'center',
+              align: i === 1 || i === 2 ? 'center' : 'center',
             });
             if (i < headers.length - 1) {
               doc.save();
@@ -169,8 +169,8 @@ export class WeighingStockReportPdfService {
               String(row.seq ?? idx + 1),
               String(row.item_name ?? '-'),
               String(row.cabinet_name ?? '-'),
-              String(row.slot_no ?? '-'),
-              String(row.sensor ?? '-'),
+              String(row.channel_display ?? '-'),
+              String(row.slot_display ?? '-'),
               String(row.qty ?? 0),
             ];
             doc.fontSize(13).font(finalFontName);

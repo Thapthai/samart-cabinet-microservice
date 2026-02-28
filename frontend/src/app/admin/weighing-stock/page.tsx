@@ -127,6 +127,10 @@ export default function WeighingPage() {
 
   const hasActiveFilters = itemcodeFilter || stockIdFilter;
 
+  /** สล็อต 1 = ใน, 2 = นอก */
+  const formatSlotDisplay = (value: number | null | undefined) =>
+    value === 1 ? 'ใน' : value === 2 ? 'นอก' : value != null ? String(value) : '-';
+
   const handleDownloadWeighingStockExcel = async () => {
     try {
       setExportLoading('excel');
@@ -160,20 +164,30 @@ export default function WeighingPage() {
   return (
     <ProtectedRoute>
       <AppLayout fullWidth>
-        <div className="space-y-6">
-          <div className="flex items-center gap-3">
-            <div className="p-2 bg-blue-100 rounded-lg">
-              <Package className="h-6 w-6 text-blue-600" />
+        <div className="space-y-6 pb-6">
+          <div className="flex items-center gap-4">
+            <div className="p-3 bg-blue-100 rounded-xl shadow-sm">
+              <Package className="h-7 w-7 text-blue-600" />
             </div>
             <div>
-              <h1 className="text-2xl font-bold text-gray-900">สต๊อกอุปกรณ์ในตู้ Weighing</h1>
-              <p className="text-sm text-gray-500 mt-1">เมนูสต๊อกอุปกรณ์ที่มีในตู้ Weighing</p>
+              <h1 className="text-2xl font-bold text-gray-900 tracking-tight">สต๊อกอุปกรณ์ในตู้ Weighing</h1>
+              <p className="text-sm text-gray-500 mt-0.5">เมนูสต๊อกอุปกรณ์ที่มีในตู้ Weighing</p>
             </div>
           </div>
 
-          {/* Filter Card — แถว 1: รหัสสินค้า | ตู้ | แถว 2: ค้นหา / ล้าง */}
-          <Card className="border-blue-100 bg-gradient-to-br from-slate-50 to-blue-50/30">
-            <CardContent className="pt-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="bg-blue-50/80 border border-blue-100 p-5 rounded-xl shadow-sm">
+              <p className="text-sm text-blue-600 font-medium">รายการทั้งหมด</p>
+              <p className="text-2xl font-bold text-blue-900 mt-0.5">{totalItems}</p>
+            </div>
+            <div className="bg-slate-50/80 border border-slate-200 p-5 rounded-xl shadow-sm">
+              <p className="text-sm text-slate-600 font-medium">จำนวนรวม (Qty)</p>
+              <p className="text-2xl font-bold text-slate-900 mt-0.5">{items.reduce((sum, row) => sum + (row.Qty ?? 0), 0)}</p>
+            </div>
+          </div>
+
+          <Card className="border-blue-100/80 bg-gradient-to-br from-slate-50 to-blue-50/40 shadow-sm overflow-hidden">
+            <CardContent className="pt-6 pb-6">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4 items-end">
                 <div className="space-y-1.5">
                   <label className="text-sm font-medium text-gray-700">
@@ -228,20 +242,21 @@ export default function WeighingPage() {
             </CardContent>
           </Card>
 
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0">
-              <CardTitle>รายการสต๊อกในตู้ Weighing</CardTitle>
-              <div className="flex items-center gap-2">
+          <Card className="shadow-sm border-gray-200/80 overflow-hidden">
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 border-b bg-slate-50/50">
+              <CardTitle className="text-lg">รายการสต๊อกในตู้ Weighing</CardTitle>
+              <div className="flex items-center gap-3 flex-wrap">
                 <span className="text-sm text-muted-foreground">
                   ทั้งหมด {totalItems} รายการ
                 </span>
-                <div className="flex flex-wrap items-center gap-2">
+                <div className="flex items-center gap-2">
                   <Button
                     type="button"
                     variant="outline"
                     size="sm"
                     onClick={handleDownloadWeighingStockExcel}
                     disabled={exportLoading !== null}
+                    className="shadow-sm"
                   >
                     <Download className="h-4 w-4 mr-1.5" />
                     {exportLoading === 'excel' ? 'กำลังโหลด...' : 'Excel'}
@@ -252,6 +267,7 @@ export default function WeighingPage() {
                     size="sm"
                     onClick={handleDownloadWeighingStockPdf}
                     disabled={exportLoading !== null}
+                    className="shadow-sm"
                   >
                     <Download className="h-4 w-4 mr-1.5" />
                     {exportLoading === 'pdf' ? 'กำลังโหลด...' : 'PDF'}
@@ -259,53 +275,56 @@ export default function WeighingPage() {
                 </div>
               </div>
             </CardHeader>
-            <CardContent>
+            <CardContent className="p-0">
               {loading ? (
-                <div className="py-8 text-center text-muted-foreground">กำลังโหลด...</div>
+                <div className="py-12 text-center text-muted-foreground">กำลังโหลด...</div>
               ) : items.length === 0 ? (
-                <div className="py-8 text-center text-muted-foreground">ไม่พบข้อมูล</div>
+                <div className="py-12 text-center text-muted-foreground">ไม่พบข้อมูล</div>
               ) : (
                 <>
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead className="w-16">ลำดับ</TableHead>
-
-                        <TableHead>ชื่อสินค้า</TableHead>
-                        <TableHead className="text-center">ตู้</TableHead>
-                        <TableHead className="text-center">ช่อง</TableHead>
-                        <TableHead className="text-center">สล็อต</TableHead>
-                        <TableHead className="text-right">จำนวน</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {items.map((row, index) => (
-                        <TableRow key={row.id}>
-                          <TableCell className="text-muted-foreground">
-                            {(currentPage - 1) * itemsPerPage + index + 1}
-                          </TableCell>
-                          <TableCell className="max-w-[200px] truncate" title={row.item?.itemname ?? undefined}>
-                            {row.item?.itemname || row.item?.Alternatename || '-'}
-                          </TableCell>
-                          <TableCell className="text-center">
-                            {row.cabinet
-                              ? row.cabinet.cabinet_name || row.cabinet.cabinet_code || '-'
-                              : '-'}
-                          </TableCell>
-                          <TableCell className="text-center">{row.SlotNo}</TableCell>
-                          <TableCell className="text-center">{row.Sensor}</TableCell>
-                          <TableCell className="text-right">{row.Qty}</TableCell>
+                  <div className="overflow-x-auto">
+                    <Table>
+                      <TableHeader>
+                        <TableRow className="bg-slate-100/80 hover:bg-slate-100/80 border-b">
+                          <TableHead className="w-14 text-center font-semibold">ลำดับ</TableHead>
+                          <TableHead className="min-w-[200px] font-semibold">ชื่อสินค้า</TableHead>
+                          <TableHead className="min-w-[120px] text-center font-semibold">ตู้</TableHead>
+                          <TableHead className="w-20 text-center font-semibold">ช่อง</TableHead>
+                          <TableHead className="w-20 text-center font-semibold">สล็อต</TableHead>
+                          <TableHead className="w-24 text-right font-semibold">จำนวน</TableHead>
                         </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
+                      </TableHeader>
+                      <TableBody>
+                        {items.map((row, index) => (
+                          <TableRow key={row.id} className="hover:bg-slate-50/80">
+                            <TableCell className="text-center text-muted-foreground tabular-nums">
+                              {(currentPage - 1) * itemsPerPage + index + 1}
+                            </TableCell>
+                            <TableCell className="max-w-[220px] truncate font-medium" title={row.item?.itemname ?? undefined}>
+                              {row.item?.itemname || row.item?.Alternatename || '-'}
+                            </TableCell>
+                            <TableCell className="text-center text-gray-700">
+                              {row.cabinet
+                                ? row.cabinet.cabinet_name || row.cabinet.cabinet_code || row.StockID
+                                : row.StockID}
+                            </TableCell>
+                            <TableCell className="text-center">{row.SlotNo ?? '-'}</TableCell>
+                            <TableCell className="text-center">{formatSlotDisplay(row.Sensor)}</TableCell>
+                            <TableCell className="text-right tabular-nums font-medium">{row.Qty}</TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  </div>
                   {totalPages > 1 && (
-                    <Pagination
-                      currentPage={currentPage}
-                      totalPages={totalPages}
-                      onPageChange={handlePageChange}
-                      loading={loading}
-                    />
+                    <div className="px-4 pb-4">
+                      <Pagination
+                        currentPage={currentPage}
+                        totalPages={totalPages}
+                        onPageChange={handlePageChange}
+                        loading={loading}
+                      />
+                    </div>
                   )}
                 </>
               )}

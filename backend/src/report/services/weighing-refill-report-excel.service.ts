@@ -105,7 +105,8 @@ export class WeighingRefillReportExcelService {
     data.data.forEach((row, idx) => {
       const excelRow = worksheet.getRow(dataRowIndex);
       const bg = idx % 2 === 0 ? 'FFFFFFFF' : 'FFF8F9FA';
-      [row.seq, row.item_name, row.operator_name, row.qty, row.modify_date].forEach((val, colIndex) => {
+      const rowValues = [row.seq, row.item_name, row.operator_name, row.qty, row.modify_date];
+      rowValues.forEach((val, colIndex) => {
         const cell = excelRow.getCell(colIndex + 1);
         cell.value = val;
         cell.font = { name: 'Tahoma', size: 12, color: { argb: 'FF212529' } };
@@ -126,10 +127,10 @@ export class WeighingRefillReportExcelService {
     worksheet.getRow(footerRow).height = 18;
 
     worksheet.getColumn(1).width = 13;
-    worksheet.getColumn(2).width = 45;
-    worksheet.getColumn(3).width = 22;
-    worksheet.getColumn(4).width = 12;
-    worksheet.getColumn(5).width = 22;
+    worksheet.getColumn(2).width = 55;
+    worksheet.getColumn(3).width = 20;
+    worksheet.getColumn(4).width = 10;
+    worksheet.getColumn(5).width = 30;
 
     const buffer = await workbook.xlsx.writeBuffer();
     return Buffer.from(buffer);

@@ -137,7 +137,7 @@ export default function FilterSection({ onSearch, onBeforeSearch }: FilterSectio
   };
 
   return (
-    <Card className="mb-6 border-slate-200/80 shadow-sm rounded-xl">
+    <Card className="mb-6 border-blue-100/80 bg-gradient-to-br from-slate-50 to-blue-50/40 shadow-sm overflow-hidden rounded-xl">
       <CardHeader className="border-b border-slate-100 bg-slate-50/50">
         <CardTitle className="flex items-center gap-2 text-slate-800">
           <Filter className="h-5 w-5 text-blue-600" />
@@ -192,10 +192,10 @@ export default function FilterSection({ onSearch, onBeforeSearch }: FilterSectio
         </div>
 
         <div className="flex gap-3 pt-1">
-          <Button onClick={handleSearch} className="flex-1">
+          <Button onClick={handleSearch} className="flex-1 shadow-sm">
             ค้นหา
           </Button>
-          <Button onClick={handleReset} variant="outline" className="flex-1 border-slate-200 hover:bg-slate-50">
+          <Button onClick={handleReset} variant="outline" className="flex-1 border-gray-300 hover:bg-slate-50">
             รีเซ็ต
           </Button>
         </div>

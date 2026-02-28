@@ -2859,6 +2859,7 @@ export class ReportServiceService {
       const totalQty = rows.reduce((sum: number, r: any) => sum + (Number(r?.Qty) || 0), 0);
       const cabinetName = (r: any) =>
         r?.cabinet ? r.cabinet.cabinet_name || r.cabinet.cabinet_code || '-' : '-';
+      const slotDisplay = (v: any) => (v === 1 ? 'ใน' : v === 2 ? 'นอก' : v != null ? String(v) : '-');
       const reportData: WeighingStockReportData = {
         filters: { stockId: params?.stockId, itemcode: params?.itemcode },
         summary: { total_rows: rows.length, total_qty: totalQty },
@@ -2868,6 +2869,8 @@ export class ReportServiceService {
           cabinet_name: cabinetName(r),
           slot_no: Number(r?.SlotNo) ?? 0,
           sensor: Number(r?.Sensor) ?? 0,
+          channel_display: r?.SlotNo != null ? String(r.SlotNo) : '-',
+          slot_display: slotDisplay(r?.Sensor),
           qty: Number(r?.Qty) || 0,
         })),
       };
@@ -2900,6 +2903,7 @@ export class ReportServiceService {
       const totalQty = rows.reduce((sum: number, r: any) => sum + (Number(r?.Qty) || 0), 0);
       const cabinetName = (r: any) =>
         r?.cabinet ? r.cabinet.cabinet_name || r.cabinet.cabinet_code || '-' : '-';
+      const slotDisplay = (v: any) => (v === 1 ? 'ใน' : v === 2 ? 'นอก' : v != null ? String(v) : '-');
       const reportData: WeighingStockReportData = {
         filters: { stockId: params?.stockId, itemcode: params?.itemcode },
         summary: { total_rows: rows.length, total_qty: totalQty },
@@ -2909,6 +2913,8 @@ export class ReportServiceService {
           cabinet_name: cabinetName(r),
           slot_no: Number(r?.SlotNo) ?? 0,
           sensor: Number(r?.Sensor) ?? 0,
+          channel_display: r?.SlotNo != null ? String(r.SlotNo) : '-',
+          slot_display: slotDisplay(r?.Sensor),
           qty: Number(r?.Qty) || 0,
         })),
       };
