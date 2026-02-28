@@ -7,18 +7,20 @@ export class WeighingController {
 
   /**
    * GET /weighing — รายการ ItemSlotInCabinet แบบแบ่งหน้า
-   * Query: page, limit, itemcode, stockId (filter by cabinet.stock_id)
+   * Query: page, limit, itemName (ค้นหาชื่ออุปกรณ์), itemcode, stockId (filter by cabinet.stock_id)
    */
   @Get()
   findAll(
     @Query('page') page?: string,
     @Query('limit') limit?: string,
+    @Query('itemName') itemName?: string,
     @Query('itemcode') itemcode?: string,
     @Query('stockId') stockId?: string,
   ) {
     return this.weighingService.findAll({
       page: page ? parseInt(page, 10) : undefined,
       limit: limit ? parseInt(limit, 10) : undefined,
+      itemName,
       itemcode,
       stockId: stockId ? parseInt(stockId, 10) : undefined,
     });
@@ -26,13 +28,14 @@ export class WeighingController {
 
   /**
    * GET /weighing/by-sign — รายการ Detail ตาม Sign (เบิก = '-', เติม = '+')
-   * Query: sign, page, limit, itemcode, stockId, dateFrom, dateTo (YYYY-MM-DD)
+   * Query: sign, page, limit, itemName (ค้นหาชื่ออุปกรณ์), itemcode, stockId, dateFrom, dateTo (YYYY-MM-DD)
    */
   @Get('by-sign')
   findBySign(
     @Query('sign') sign?: string,
     @Query('page') page?: string,
     @Query('limit') limit?: string,
+    @Query('itemName') itemName?: string,
     @Query('itemcode') itemcode?: string,
     @Query('stockId') stockId?: string,
     @Query('dateFrom') dateFrom?: string,
@@ -41,6 +44,7 @@ export class WeighingController {
     return this.weighingService.findDetailsBySign(sign === '+' ? '+' : '-', {
       page: page ? parseInt(page, 10) : undefined,
       limit: limit ? parseInt(limit, 10) : undefined,
+      itemName,
       itemcode,
       stockId: stockId ? parseInt(stockId, 10) : undefined,
       dateFrom,

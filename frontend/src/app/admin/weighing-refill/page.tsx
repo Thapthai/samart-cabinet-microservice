@@ -103,7 +103,7 @@ export default function WeighingRefillPage() {
         sign: '+',
         page: currentPage,
         limit: itemsPerPage,
-        itemcode: itemcodeFilter || undefined,
+        itemName: itemcodeFilter || undefined,
         stockId: stockIdFilter ? parseInt(stockIdFilter, 10) : undefined,
         dateFrom: dateFromFilter || undefined,
         dateTo: dateToFilter || undefined,
@@ -171,8 +171,8 @@ export default function WeighingRefillPage() {
     try {
       setExportLoading('excel');
       const stockId = stockIdFilter ? parseInt(stockIdFilter, 10) : undefined;
-      const itemcode = itemcodeFilter || undefined;
-      await reportsApi.downloadWeighingRefillExcel({ stockId, itemcode, dateFrom: dateFromFilter, dateTo: dateToFilter });
+      const itemName = itemcodeFilter || undefined;
+      await reportsApi.downloadWeighingRefillExcel({ stockId, itemName, dateFrom: dateFromFilter, dateTo: dateToFilter });
       toast.success('ดาวน์โหลดรายงาน Excel สำเร็จ');
     } catch (e) {
       console.error(e);
@@ -186,8 +186,8 @@ export default function WeighingRefillPage() {
     try {
       setExportLoading('pdf');
       const stockId = stockIdFilter ? parseInt(stockIdFilter, 10) : undefined;
-      const itemcode = itemcodeFilter || undefined;
-      await reportsApi.downloadWeighingRefillPdf({ stockId, itemcode, dateFrom: dateFromFilter, dateTo: dateToFilter });
+      const itemName = itemcodeFilter || undefined;
+      await reportsApi.downloadWeighingRefillPdf({ stockId, itemName, dateFrom: dateFromFilter, dateTo: dateToFilter });
       toast.success('ดาวน์โหลดรายงาน PDF สำเร็จ');
     } catch (e) {
       console.error(e);
@@ -226,9 +226,9 @@ export default function WeighingRefillPage() {
             <CardContent className="pt-6 pb-6">
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 items-end">
                 <div className="space-y-1.5">
-                  <label className="text-sm font-medium text-gray-700">รหัสสินค้า (itemcode)</label>
+                  <label className="text-sm font-medium text-gray-700">ชื่ออุปกรณ์</label>
                   <Input
-                    placeholder="พิมพ์รหัสสินค้า..."
+                    placeholder="พิมพ์ชื่ออุปกรณ์..."
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
                     onKeyDown={(e) => e.key === 'Enter' && handleSearch()}

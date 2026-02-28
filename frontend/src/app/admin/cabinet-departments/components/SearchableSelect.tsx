@@ -46,25 +46,54 @@ export default function SearchableSelect({
 }: SearchableSelectProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
-  const [position, setPosition] = useState<{ top: number; left: number; width: number } | null>(null);
+  type PositionState = {
+    top?: number;
+    bottom?: number;
+    left: number;
+    width: number;
+    isFixed?: boolean;
+  };
+  const [position, setPosition] = useState<PositionState | null>(null);
   const dropdownRef = useRef<HTMLDivElement>(null);
   const triggerRef = useRef<HTMLDivElement>(null);
   const portalRef = useRef<HTMLDivElement>(null);
   const initialLoadDone = useRef(false);
 
   const updatePosition = () => {
-    if (!triggerRef.current || !portalTargetRef?.current) return;
+    if (!triggerRef.current) return;
     const tr = triggerRef.current.getBoundingClientRect();
-    const cr = portalTargetRef.current.getBoundingClientRect();
-    setPosition({
-      top: tr.bottom - cr.top + 4,
-      left: tr.left - cr.left,
-      width: tr.width,
-    });
+    if (portalTargetRef?.current) {
+      const cr = portalTargetRef.current.getBoundingClientRect();
+      setPosition({
+        top: tr.bottom - cr.top + 4,
+        left: tr.left - cr.left,
+        width: tr.width,
+      });
+      return;
+    }
+    const spaceAbove = tr.top;
+    const spaceBelow = window.innerHeight - tr.bottom;
+    const openAbove = spaceAbove >= spaceBelow;
+    const gap = 4;
+    if (openAbove) {
+      setPosition({
+        bottom: window.innerHeight - tr.top + gap,
+        left: tr.left,
+        width: tr.width,
+        isFixed: true,
+      });
+    } else {
+      setPosition({
+        top: tr.bottom + gap,
+        left: tr.left,
+        width: tr.width,
+        isFixed: true,
+      });
+    }
   };
 
   useLayoutEffect(() => {
-    if (!isOpen || !portalTargetRef?.current) {
+    if (!isOpen) {
       setPosition(null);
       return;
     }
@@ -137,12 +166,15 @@ export default function SearchableSelect({
   const dropdownContent = position ? (
     <div
       ref={portalRef}
-      className="absolute z-[9999] bg-white border border-slate-200 rounded-lg shadow-lg max-h-[300px] overflow-hidden"
+      className="z-[9999] bg-white border border-slate-200 rounded-lg shadow-lg max-h-[300px] overflow-hidden"
       style={{
-        top: position.top,
+        position: position.isFixed ? "fixed" : "absolute",
         left: position.left,
         width: position.width,
         minWidth: 200,
+        ...(position.isFixed && position.bottom != null
+          ? { bottom: position.bottom }
+          : { top: position.top ?? 0 }),
       }}
     >
       <div className="p-2 border-b border-slate-100 bg-slate-50/50 shrink-0">
@@ -234,60 +266,13 @@ export default function SearchableSelect({
           <ChevronDown className={cn("h-4 w-4 transition-transform", isOpen && "transform rotate-180")} />
         </button>
 
-        {/* Dropdown: ใน modal ใช้ portal ไป container ด้านนอก overflow → scroll ได้ปกติ */}
-        {dropdownContent && portalTargetRef?.current && typeof document !== "undefined" &&
-          createPortal(dropdownContent, portalTargetRef.current)}
-        {/* ไม่มี portalTargetRef หรืออยู่นอก modal: dropdown แบบเดิมใต้ปุ่ม */}
-        {isOpen && !position && (
-          <div className="absolute left-0 right-0 top-full z-[100] mt-1 min-w-full bg-white border border-slate-200 rounded-lg shadow-lg max-h-[300px] overflow-hidden">
-            <div className="p-2 border-b border-slate-100 bg-slate-50/50 sticky top-0 shrink-0">
-              <div className="relative">
-                <Search className="absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
-                <Input
-                  placeholder={searchPlaceholder}
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  className="h-9 pl-8 border-slate-200 bg-white text-sm"
-                  autoFocus
-                />
-              </div>
-            </div>
-            <div className="overflow-y-auto max-h-[240px] overscroll-contain">
-              {loading ? (
-                <div className="flex items-center justify-center py-6">
-                  <Loader2 className="h-4 w-4 animate-spin text-slate-500" />
-                  <span className="ml-2 text-sm text-slate-500">กำลังโหลด...</span>
-                </div>
-              ) : filteredOptions.length === 0 ? (
-                <div className="py-6 text-center text-sm text-slate-500">ไม่พบข้อมูล</div>
-              ) : (
-                filteredOptions.map((option, idx) => (
-                  <button
-                    key={`opt-${option.value}-${idx}`}
-                    type="button"
-                    onClick={() => {
-                      onValueChange(option.value);
-                      setIsOpen(false);
-                      setSearchTerm("");
-                    }}
-                    className={cn(
-                      "w-full text-left px-3 py-2.5 text-sm transition-colors border-b border-slate-50 last:border-0",
-                      "hover:bg-slate-50 focus:bg-slate-50 focus:outline-none",
-                      option.value === value && "bg-blue-50 text-blue-700 font-medium"
-                    )}
-                  >
-                    <div className="flex flex-col gap-0.5">
-                      <span className="font-medium">{option.label || "—"}</span>
-                      {option.subLabel != null && option.subLabel !== "" && (
-                        <span className="text-xs text-slate-500">{option.subLabel}</span>
-                      )}
-                    </div>
-                  </button>
-                ))
-              )}
-            </div>
-          </div>
-        )}
+        {/* Dropdown: portal ไป body (overlay ลอยเหนือทุกอย่าง) หรือไป container ใน modal */}
+        {dropdownContent &&
+          typeof document !== "undefined" &&
+          (() => {
+            const target = position?.isFixed ? document.body : portalTargetRef?.current;
+            return target ? createPortal(dropdownContent, target) : null;
+          })()}
       </div>
     </div>
   );

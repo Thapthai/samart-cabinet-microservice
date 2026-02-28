@@ -3,18 +3,27 @@ import { PrismaService } from '../prisma/prisma.service';
 
 @Injectable()
 export class WeighingService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(private readonly prisma: PrismaService) { }
 
   /**
    * ดึงรายการ ItemSlotInCabinet แบบแบ่งหน้า (รวม relation cabinet)
+   * itemName: ค้นหาจากชื่ออุปกรณ์ (itemname / Alternatename)
    */
-  async findAll(params: { page?: number; limit?: number; itemcode?: string; stockId?: number }) {
+  async findAll(params: { page?: number; limit?: number; itemcode?: string; itemName?: string; stockId?: number }) {
     const page = params.page ?? 1;
     const limit = Math.min(params.limit ?? 50, 10000);
     const skip = (page - 1) * limit;
 
-    const where: { itemcode?: { contains: string }; StockID?: number } = {};
-    if (params.itemcode?.trim()) {
+    const where: { itemcode?: { contains: string }; item?: object; StockID?: number } = {};
+    if (params.itemName?.trim()) {
+      const k = params.itemName.trim();
+      where.item = {
+        OR: [
+          { itemname: { contains: k } },
+          { Alternatename: { contains: k } },
+        ],
+      };
+    } else if (params.itemcode?.trim()) {
       where.itemcode = { contains: params.itemcode.trim() };
     }
     if (params.stockId != null && params.stockId > 0) {
@@ -26,7 +35,7 @@ export class WeighingService {
         where,
         skip,
         take: limit,
-        orderBy: { id: 'asc' },
+        orderBy: [{ SlotNo: 'asc' }, { Sensor: 'asc' }],
         include: {
           _count: { select: { itemSlotInCabinetDetail: true } },
           cabinet: { select: { id: true, cabinet_name: true, cabinet_code: true, stock_id: true } },
@@ -131,6 +140,7 @@ export class WeighingService {
   /**
    * ดึงรายการ ItemSlotInCabinetDetail แบบแบ่งหน้า ตาม Sign (เบิก = '-', เติม = '+')
    * dateFrom/dateTo: YYYY-MM-DD, กรองตาม ModifyDate (ต้นวัน - ปลายวัน UTC)
+   * itemName: ค้นหาจากชื่ออุปกรณ์ (itemname / Alternatename)
    */
   async findDetailsBySign(
     sign: string,
@@ -138,6 +148,7 @@ export class WeighingService {
       page?: number;
       limit?: number;
       itemcode?: string;
+      itemName?: string;
       stockId?: number;
       dateFrom?: string;
       dateTo?: string;
@@ -150,12 +161,21 @@ export class WeighingService {
     const where: {
       Sign: string;
       itemcode?: { contains: string };
+      item?: object;
       StockID?: number;
       ModifyDate?: { gte?: Date; lte?: Date };
     } = {
       Sign: sign === '+' ? '+' : '-',
     };
-    if (params.itemcode?.trim()) {
+    if (params.itemName?.trim()) {
+      const k = params.itemName.trim();
+      where.item = {
+        OR: [
+          { itemname: { contains: k } },
+          { Alternatename: { contains: k } },
+        ],
+      };
+    } else if (params.itemcode?.trim()) {
       where.itemcode = { contains: params.itemcode.trim() };
     }
     if (params.stockId != null && params.stockId > 0) {

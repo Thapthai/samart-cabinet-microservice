@@ -15,7 +15,7 @@ export interface WeighingStockRow {
 }
 
 export interface WeighingStockReportData {
-  filters?: { stockId?: number; itemcode?: string };
+  filters?: { stockId?: number; itemName?: string; itemcode?: string };
   summary: { total_rows: number; total_qty: number };
   data: WeighingStockRow[];
 }
@@ -38,9 +38,10 @@ export class WeighingStockReportExcelService {
       timeZone: 'Asia/Bangkok',
     });
 
+    const thinBorder = { top: { style: 'thin' as const }, left: { style: 'thin' as const }, bottom: { style: 'thin' as const }, right: { style: 'thin' as const } };
     worksheet.mergeCells('A1:A2');
     worksheet.getCell('A1').fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFF8F9FA' } };
-    worksheet.getCell('A1').border = { right: { style: 'thin' }, bottom: { style: 'thin' } };
+    worksheet.getCell('A1').border = thinBorder;
     const logoPath = resolveReportLogoPath();
     if (logoPath && fs.existsSync(logoPath)) {
       try {
@@ -60,12 +61,13 @@ export class WeighingStockReportExcelService {
     headerCell.font = { name: 'Tahoma', size: 14, bold: true, color: { argb: 'FF1A365D' } };
     headerCell.alignment = { horizontal: 'center', vertical: 'middle', wrapText: true };
     headerCell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFF8F9FA' } };
-    headerCell.border = { left: { style: 'thin' }, bottom: { style: 'thin' }, right: { style: 'thin' } };
+    headerCell.border = thinBorder;
 
     worksheet.mergeCells('A3:F3');
     worksheet.getCell('A3').value = `วันที่รายงาน: ${reportDate}`;
     worksheet.getCell('A3').font = { name: 'Tahoma', size: 12, color: { argb: 'FF6C757D' } };
     worksheet.getCell('A3').alignment = { horizontal: 'right', vertical: 'middle' };
+    worksheet.getCell('A3').border = thinBorder;
     worksheet.getRow(3).height = 20;
 
     const filters = data.filters ?? {};
@@ -74,25 +76,25 @@ export class WeighingStockReportExcelService {
       filters.itemcode ?? 'ทั้งหมด',
       `${data.summary?.total_rows ?? 0} รายการ`,
     ];
-    const filterLabels = ['ตู้ (StockID)', 'รหัสสินค้า', 'จำนวนรายการ'];
-    worksheet.mergeCells('A4:B4');
-    worksheet.getCell('A4').value = `${filterLabels[0]}: ${filterValues[0]}`;
-    worksheet.getCell('A4').font = { name: 'Tahoma', size: 11, bold: true, color: { argb: 'FF1A365D' } };
-    worksheet.getCell('A4').fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFE8EDF2' } };
-    worksheet.getCell('A4').alignment = { horizontal: 'center', vertical: 'middle' };
-    worksheet.mergeCells('C4:D4');
-    worksheet.getCell('C4').value = `${filterLabels[1]}: ${filterValues[1]}`;
-    worksheet.getCell('C4').font = { name: 'Tahoma', size: 11, bold: true, color: { argb: 'FF1A365D' } };
-    worksheet.getCell('C4').fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFE8EDF2' } };
-    worksheet.getCell('C4').alignment = { horizontal: 'center', vertical: 'middle' };
-    worksheet.mergeCells('E4:F4');
-    worksheet.getCell('E4').value = `${filterLabels[2]}: ${filterValues[2]}`;
-    worksheet.getCell('E4').font = { name: 'Tahoma', size: 11, bold: true, color: { argb: 'FF1A365D' } };
-    worksheet.getCell('E4').fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFE8EDF2' } };
-    worksheet.getCell('E4').alignment = { horizontal: 'center', vertical: 'middle' };
-    worksheet.getRow(4).height = 20;
+    // const filterLabels = ['ตู้ (StockID)', 'รหัสสินค้า', 'จำนวนรายการ'];
+    // worksheet.mergeCells('A4:B4');
+    // worksheet.getCell('A4').value = `${filterLabels[0]}: ${filterValues[0]}`;
+    // worksheet.getCell('A4').font = { name: 'Tahoma', size: 11, bold: true, color: { argb: 'FF1A365D' } };
+    // worksheet.getCell('A4').fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFE8EDF2' } };
+    // worksheet.getCell('A4').alignment = { horizontal: 'center', vertical: 'middle' };
+    // worksheet.mergeCells('C4:D4');
+    // worksheet.getCell('C4').value = `${filterLabels[1]}: ${filterValues[1]}`;
+    // worksheet.getCell('C4').font = { name: 'Tahoma', size: 11, bold: true, color: { argb: 'FF1A365D' } };
+    // worksheet.getCell('C4').fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFE8EDF2' } };
+    // worksheet.getCell('C4').alignment = { horizontal: 'center', vertical: 'middle' };
+    // worksheet.mergeCells('E4:F4');
+    // worksheet.getCell('E4').value = `${filterLabels[2]}: ${filterValues[2]}`;
+    // worksheet.getCell('E4').font = { name: 'Tahoma', size: 11, bold: true, color: { argb: 'FF1A365D' } };
+    // worksheet.getCell('E4').fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFE8EDF2' } };
+    // worksheet.getCell('E4').alignment = { horizontal: 'center', vertical: 'middle' };
+    // worksheet.getRow(4).height = 20;
 
-    const tableStartRow = 5;
+    const tableStartRow = 4;
     const headers = ['ลำดับ', 'ชื่อสินค้า', 'ตู้', 'ช่อง', 'สล็อต', 'จำนวน'];
     const headerRow = worksheet.getRow(tableStartRow);
     headers.forEach((h, i) => {
@@ -100,8 +102,8 @@ export class WeighingStockReportExcelService {
       cell.value = h;
       cell.font = { name: 'Tahoma', size: 12, bold: true, color: { argb: 'FFFFFFFF' } };
       cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF1A365D' } };
-      cell.alignment = { horizontal: 'center', vertical: 'middle' };
-      cell.border = { top: { style: 'thin' }, left: { style: 'thin' }, bottom: { style: 'thin' }, right: { style: 'thin' } };
+      cell.alignment = { horizontal: 'center', vertical: 'middle', wrapText: true };
+      cell.border = thinBorder;
     });
     headerRow.height = 26;
 
@@ -114,12 +116,23 @@ export class WeighingStockReportExcelService {
         cell.value = val;
         cell.font = { name: 'Tahoma', size: 12, color: { argb: 'FF212529' } };
         cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: bg } };
-        cell.alignment = { horizontal: colIndex === 1 || colIndex === 2 ? 'left' : 'center', vertical: 'middle' };
-        cell.border = { top: { style: 'thin' }, left: { style: 'thin' }, bottom: { style: 'thin' }, right: { style: 'thin' } };
+        cell.alignment = {
+          horizontal: colIndex === 1 || colIndex === 2 ? 'left' : 'center',
+          vertical: 'middle',
+          wrapText: true,
+        };
+        cell.border = thinBorder;
       });
       excelRow.height = 22;
       dataRowIndex++;
     });
+
+    if (data.data.length > 0) {
+      worksheet.autoFilter = {
+        from: { row: tableStartRow, column: 1 },
+        to: { row: dataRowIndex - 1, column: 6 },
+      };
+    }
 
     worksheet.addRow([]);
     const footerRow = dataRowIndex + 1;
@@ -127,6 +140,7 @@ export class WeighingStockReportExcelService {
     worksheet.getCell(`A${footerRow}`).value = 'เอกสารนี้สร้างจากระบบรายงานอัตโนมัติ';
     worksheet.getCell(`A${footerRow}`).font = { name: 'Tahoma', size: 11, color: { argb: 'FFADB5BD' } };
     worksheet.getCell(`A${footerRow}`).alignment = { horizontal: 'center', vertical: 'middle' };
+    // worksheet.getCell(`A${footerRow}`).border = thinBorder;
     worksheet.getRow(footerRow).height = 18;
 
     worksheet.getColumn(1).width = 13;

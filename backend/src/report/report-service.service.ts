@@ -2620,6 +2620,7 @@ export class ReportServiceService {
    */
   async generateWeighingDispenseExcel(params: {
     stockId?: number;
+    itemName?: string;
     itemcode?: string;
     dateFrom?: string;
     dateTo?: string;
@@ -2628,6 +2629,7 @@ export class ReportServiceService {
       const res = await this.weighingService.findDetailsBySign('-', {
         page: 1,
         limit: 10000,
+        itemName: params?.itemName?.trim() || undefined,
         itemcode: params?.itemcode?.trim() || undefined,
         stockId: params?.stockId,
         dateFrom: params?.dateFrom?.trim() || undefined,
@@ -2653,7 +2655,7 @@ export class ReportServiceService {
         return parts.length ? parts.join(' ') : '-';
       };
       const reportData: WeighingDispenseReportData = {
-        filters: { stockId: params?.stockId, itemcode: params?.itemcode, dateFrom: params?.dateFrom, dateTo: params?.dateTo },
+        filters: { stockId: params?.stockId, itemName: params?.itemName, itemcode: params?.itemcode, dateFrom: params?.dateFrom, dateTo: params?.dateTo },
         summary: { total_rows: rows.length, total_qty: totalQty },
         data: rows.map((r: any, i: number) => ({
           seq: i + 1,
@@ -2679,6 +2681,7 @@ export class ReportServiceService {
    */
   async generateWeighingDispensePdf(params: {
     stockId?: number;
+    itemName?: string;
     itemcode?: string;
     dateFrom?: string;
     dateTo?: string;
@@ -2687,6 +2690,7 @@ export class ReportServiceService {
       const res = await this.weighingService.findDetailsBySign('-', {
         page: 1,
         limit: 10000,
+        itemName: params?.itemName?.trim() || undefined,
         itemcode: params?.itemcode?.trim() || undefined,
         stockId: params?.stockId,
         dateFrom: params?.dateFrom?.trim() || undefined,
@@ -2712,7 +2716,7 @@ export class ReportServiceService {
         return parts.length ? parts.join(' ') : '-';
       };
       const reportData: WeighingDispenseReportData = {
-        filters: { stockId: params?.stockId, itemcode: params?.itemcode, dateFrom: params?.dateFrom, dateTo: params?.dateTo },
+        filters: { stockId: params?.stockId, itemName: params?.itemName, itemcode: params?.itemcode, dateFrom: params?.dateFrom, dateTo: params?.dateTo },
         summary: { total_rows: rows.length, total_qty: totalQty },
         data: rows.map((r: any, i: number) => ({
           seq: i + 1,
@@ -2736,11 +2740,12 @@ export class ReportServiceService {
   /**
    * Generate Weighing Refill Report (รายการเติมตู้ Weighing) - Excel
    */
-  async generateWeighingRefillExcel(params: { stockId?: number; itemcode?: string; dateFrom?: string; dateTo?: string }): Promise<{ buffer: Buffer; filename: string }> {
+  async generateWeighingRefillExcel(params: { stockId?: number; itemName?: string; itemcode?: string; dateFrom?: string; dateTo?: string }): Promise<{ buffer: Buffer; filename: string }> {
     try {
       const res = await this.weighingService.findDetailsBySign('+', {
         page: 1,
         limit: 10000,
+        itemName: params?.itemName?.trim() || undefined,
         itemcode: params?.itemcode?.trim() || undefined,
         stockId: params?.stockId,
         dateFrom: params?.dateFrom?.trim() || undefined,
@@ -2766,7 +2771,7 @@ export class ReportServiceService {
         return parts.length ? parts.join(' ') : '-';
       };
       const reportData: WeighingDispenseReportData = {
-        filters: { stockId: params?.stockId, itemcode: params?.itemcode, dateFrom: params?.dateFrom, dateTo: params?.dateTo },
+        filters: { stockId: params?.stockId, itemName: params?.itemName, itemcode: params?.itemcode, dateFrom: params?.dateFrom, dateTo: params?.dateTo },
         summary: { total_rows: rows.length, total_qty: totalQty },
         data: rows.map((r: any, i: number) => ({
           seq: i + 1,
@@ -2790,11 +2795,12 @@ export class ReportServiceService {
   /**
    * Generate Weighing Refill Report (รายการเติมตู้ Weighing) - PDF
    */
-  async generateWeighingRefillPdf(params: { stockId?: number; itemcode?: string; dateFrom?: string; dateTo?: string }): Promise<{ buffer: Buffer; filename: string }> {
+  async generateWeighingRefillPdf(params: { stockId?: number; itemName?: string; itemcode?: string; dateFrom?: string; dateTo?: string }): Promise<{ buffer: Buffer; filename: string }> {
     try {
       const res = await this.weighingService.findDetailsBySign('+', {
         page: 1,
         limit: 10000,
+        itemName: params?.itemName?.trim() || undefined,
         itemcode: params?.itemcode?.trim() || undefined,
         stockId: params?.stockId,
         dateFrom: params?.dateFrom?.trim() || undefined,
@@ -2820,7 +2826,7 @@ export class ReportServiceService {
         return parts.length ? parts.join(' ') : '-';
       };
       const reportData: WeighingDispenseReportData = {
-        filters: { stockId: params?.stockId, itemcode: params?.itemcode, dateFrom: params?.dateFrom, dateTo: params?.dateTo },
+        filters: { stockId: params?.stockId, itemName: params?.itemName, itemcode: params?.itemcode, dateFrom: params?.dateFrom, dateTo: params?.dateTo },
         summary: { total_rows: rows.length, total_qty: totalQty },
         data: rows.map((r: any, i: number) => ({
           seq: i + 1,
@@ -2846,12 +2852,14 @@ export class ReportServiceService {
    */
   async generateWeighingStockExcel(params: {
     stockId?: number;
+    itemName?: string;
     itemcode?: string;
   }): Promise<{ buffer: Buffer; filename: string }> {
     try {
       const res = await this.weighingService.findAll({
         page: 1,
         limit: 10000,
+        itemName: params?.itemName?.trim() || undefined,
         itemcode: params?.itemcode?.trim() || undefined,
         stockId: params?.stockId,
       });
@@ -2861,7 +2869,7 @@ export class ReportServiceService {
         r?.cabinet ? r.cabinet.cabinet_name || r.cabinet.cabinet_code || '-' : '-';
       const slotDisplay = (v: any) => (v === 1 ? 'ใน' : v === 2 ? 'นอก' : v != null ? String(v) : '-');
       const reportData: WeighingStockReportData = {
-        filters: { stockId: params?.stockId, itemcode: params?.itemcode },
+        filters: { stockId: params?.stockId, itemName: params?.itemName, itemcode: params?.itemcode },
         summary: { total_rows: rows.length, total_qty: totalQty },
         data: rows.map((r: any, i: number) => ({
           seq: i + 1,
@@ -2890,12 +2898,14 @@ export class ReportServiceService {
    */
   async generateWeighingStockPdf(params: {
     stockId?: number;
+    itemName?: string;
     itemcode?: string;
   }): Promise<{ buffer: Buffer; filename: string }> {
     try {
       const res = await this.weighingService.findAll({
         page: 1,
         limit: 10000,
+        itemName: params?.itemName?.trim() || undefined,
         itemcode: params?.itemcode?.trim() || undefined,
         stockId: params?.stockId,
       });
@@ -2905,7 +2915,7 @@ export class ReportServiceService {
         r?.cabinet ? r.cabinet.cabinet_name || r.cabinet.cabinet_code || '-' : '-';
       const slotDisplay = (v: any) => (v === 1 ? 'ใน' : v === 2 ? 'นอก' : v != null ? String(v) : '-');
       const reportData: WeighingStockReportData = {
-        filters: { stockId: params?.stockId, itemcode: params?.itemcode },
+        filters: { stockId: params?.stockId, itemName: params?.itemName, itemcode: params?.itemcode },
         summary: { total_rows: rows.length, total_qty: totalQty },
         data: rows.map((r: any, i: number) => ({
           seq: i + 1,

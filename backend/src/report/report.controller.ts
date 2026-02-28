@@ -430,7 +430,7 @@ export class ReportServiceController {
   }
 
   @Post('weighing-dispense/excel')
-  async generateWeighingDispenseExcel(@Body() data: { stockId?: number; itemcode?: string; dateFrom?: string; dateTo?: string }) {
+  async generateWeighingDispenseExcel(@Body() data: { stockId?: number; itemName?: string; itemcode?: string; dateFrom?: string; dateTo?: string }) {
     try {
       const result = await this.reportServiceService.generateWeighingDispenseExcel(data);
       return toFileResponse(result.buffer, result.filename, EXCEL_CONTENT);
@@ -440,7 +440,7 @@ export class ReportServiceController {
   }
 
   @Post('weighing-dispense/pdf')
-  async generateWeighingDispensePdf(@Body() data: { stockId?: number; itemcode?: string; dateFrom?: string; dateTo?: string }) {
+  async generateWeighingDispensePdf(@Body() data: { stockId?: number; itemName?: string; itemcode?: string; dateFrom?: string; dateTo?: string }) {
     try {
       const result = await this.reportServiceService.generateWeighingDispensePdf(data);
       return toFileResponse(result.buffer, result.filename, PDF_CONTENT);
@@ -450,7 +450,7 @@ export class ReportServiceController {
   }
 
   @Post('weighing-refill/excel')
-  async generateWeighingRefillExcel(@Body() data: { stockId?: number; itemcode?: string; dateFrom?: string; dateTo?: string }) {
+  async generateWeighingRefillExcel(@Body() data: { stockId?: number; itemName?: string; itemcode?: string; dateFrom?: string; dateTo?: string }) {
     try {
       const result = await this.reportServiceService.generateWeighingRefillExcel(data);
       return toFileResponse(result.buffer, result.filename, EXCEL_CONTENT);
@@ -460,7 +460,7 @@ export class ReportServiceController {
   }
 
   @Post('weighing-refill/pdf')
-  async generateWeighingRefillPdf(@Body() data: { stockId?: number; itemcode?: string; dateFrom?: string; dateTo?: string }) {
+  async generateWeighingRefillPdf(@Body() data: { stockId?: number; itemName?: string; itemcode?: string; dateFrom?: string; dateTo?: string }) {
     try {
       const result = await this.reportServiceService.generateWeighingRefillPdf(data);
       return toFileResponse(result.buffer, result.filename, PDF_CONTENT);
@@ -470,7 +470,7 @@ export class ReportServiceController {
   }
 
   @Post('weighing-stock/excel')
-  async generateWeighingStockExcel(@Body() data: { stockId?: number; itemcode?: string }) {
+  async generateWeighingStockExcel(@Body() data: { stockId?: number; itemName?: string; itemcode?: string }) {
     try {
       const result = await this.reportServiceService.generateWeighingStockExcel(data);
       return toFileResponse(result.buffer, result.filename, EXCEL_CONTENT);
@@ -480,7 +480,7 @@ export class ReportServiceController {
   }
 
   @Post('weighing-stock/pdf')
-  async generateWeighingStockPdf(@Body() data: { stockId?: number; itemcode?: string }) {
+  async generateWeighingStockPdf(@Body() data: { stockId?: number; itemName?: string; itemcode?: string }) {
     try {
       const result = await this.reportServiceService.generateWeighingStockPdf(data);
       return toFileResponse(result.buffer, result.filename, PDF_CONTENT);

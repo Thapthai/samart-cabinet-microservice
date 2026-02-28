@@ -85,7 +85,7 @@ export default function WeighingPage() {
       const res = await weighingApi.getAll({
         page: currentPage,
         limit: itemsPerPage,
-        itemcode: itemcodeFilter || undefined,
+        itemName: itemcodeFilter || undefined,
         stockId: stockIdFilter ? parseInt(stockIdFilter, 10) : undefined,
       });
       if (res?.success && Array.isArray(res.data)) {
@@ -135,8 +135,8 @@ export default function WeighingPage() {
     try {
       setExportLoading('excel');
       const stockId = stockIdFilter ? parseInt(stockIdFilter, 10) : undefined;
-      const itemcode = itemcodeFilter || undefined;
-      await reportsApi.downloadWeighingStockExcel({ stockId, itemcode });
+      const itemName = itemcodeFilter || undefined;
+      await reportsApi.downloadWeighingStockExcel({ stockId, itemName });
       toast.success('ดาวน์โหลดรายงาน Excel สำเร็จ');
     } catch (e) {
       console.error(e);
@@ -150,8 +150,8 @@ export default function WeighingPage() {
     try {
       setExportLoading('pdf');
       const stockId = stockIdFilter ? parseInt(stockIdFilter, 10) : undefined;
-      const itemcode = itemcodeFilter || undefined;
-      await reportsApi.downloadWeighingStockPdf({ stockId, itemcode });
+      const itemName = itemcodeFilter || undefined;
+      await reportsApi.downloadWeighingStockPdf({ stockId, itemName });
       toast.success('ดาวน์โหลดรายงาน PDF สำเร็จ');
     } catch (e) {
       console.error(e);
@@ -191,10 +191,10 @@ export default function WeighingPage() {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4 items-end">
                 <div className="space-y-1.5">
                   <label className="text-sm font-medium text-gray-700">
-                    รหัสสินค้า (itemcode)
+                    ชื่ออุปกรณ์
                   </label>
                   <Input
-                    placeholder="พิมพ์รหัสสินค้า..."
+                    placeholder="พิมพ์ชื่ออุปกรณ์..."
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
                     onKeyDown={(e) => e.key === 'Enter' && handleSearch()}

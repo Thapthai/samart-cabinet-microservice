@@ -1166,9 +1166,10 @@ export const reportsApi = {
   },
 
   /** รายงานเบิกตู้ Weighing - Excel (เหมือน cabinet-stock: POST แล้ว decode base64 ดาวน์โหลด) */
-  downloadWeighingDispenseExcel: async (params?: { stockId?: number; itemcode?: string; dateFrom?: string; dateTo?: string }): Promise<void> => {
+  downloadWeighingDispenseExcel: async (params?: { stockId?: number; itemName?: string; itemcode?: string; dateFrom?: string; dateTo?: string }): Promise<void> => {
     const body = {
       stockId: params?.stockId,
+      itemName: params?.itemName || undefined,
       itemcode: params?.itemcode || undefined,
       dateFrom: params?.dateFrom || undefined,
       dateTo: params?.dateTo || undefined,
@@ -1191,9 +1192,10 @@ export const reportsApi = {
   },
 
   /** รายงานเบิกตู้ Weighing - PDF (เหมือน cabinet-stock) */
-  downloadWeighingDispensePdf: async (params?: { stockId?: number; itemcode?: string; dateFrom?: string; dateTo?: string }): Promise<void> => {
+  downloadWeighingDispensePdf: async (params?: { stockId?: number; itemName?: string; itemcode?: string; dateFrom?: string; dateTo?: string }): Promise<void> => {
     const body = {
       stockId: params?.stockId,
+      itemName: params?.itemName || undefined,
       itemcode: params?.itemcode || undefined,
       dateFrom: params?.dateFrom || undefined,
       dateTo: params?.dateTo || undefined,
@@ -1216,8 +1218,8 @@ export const reportsApi = {
   },
 
   /** รายงานเติมตู้ Weighing - Excel */
-  downloadWeighingRefillExcel: async (params?: { stockId?: number; itemcode?: string; dateFrom?: string; dateTo?: string }): Promise<void> => {
-    const body = { stockId: params?.stockId, itemcode: params?.itemcode || undefined, dateFrom: params?.dateFrom || undefined, dateTo: params?.dateTo || undefined };
+  downloadWeighingRefillExcel: async (params?: { stockId?: number; itemName?: string; itemcode?: string; dateFrom?: string; dateTo?: string }): Promise<void> => {
+    const body = { stockId: params?.stockId, itemName: params?.itemName || undefined, itemcode: params?.itemcode || undefined, dateFrom: params?.dateFrom || undefined, dateTo: params?.dateTo || undefined };
     const response = await api.post('/reports/weighing-refill/excel', body);
     const res = response.data as { success?: boolean; data?: { buffer?: string; filename?: string; contentType?: string } };
     if (!res?.success || !res?.data?.buffer) throw new Error((res as any)?.error || 'ไม่สามารถสร้างไฟล์ได้');
@@ -1236,8 +1238,8 @@ export const reportsApi = {
   },
 
   /** รายงานเติมตู้ Weighing - PDF */
-  downloadWeighingRefillPdf: async (params?: { stockId?: number; itemcode?: string; dateFrom?: string; dateTo?: string }): Promise<void> => {
-    const body = { stockId: params?.stockId, itemcode: params?.itemcode || undefined, dateFrom: params?.dateFrom || undefined, dateTo: params?.dateTo || undefined };
+  downloadWeighingRefillPdf: async (params?: { stockId?: number; itemName?: string; itemcode?: string; dateFrom?: string; dateTo?: string }): Promise<void> => {
+    const body = { stockId: params?.stockId, itemName: params?.itemName || undefined, itemcode: params?.itemcode || undefined, dateFrom: params?.dateFrom || undefined, dateTo: params?.dateTo || undefined };
     const response = await api.post('/reports/weighing-refill/pdf', body);
     const res = response.data as { success?: boolean; data?: { buffer?: string; filename?: string; contentType?: string } };
     if (!res?.success || !res?.data?.buffer) throw new Error((res as any)?.error || 'ไม่สามารถสร้างไฟล์ได้');
@@ -1256,8 +1258,8 @@ export const reportsApi = {
   },
 
   /** รายงานสต๊อกตู้ Weighing - Excel */
-  downloadWeighingStockExcel: async (params?: { stockId?: number; itemcode?: string }): Promise<void> => {
-    const body = { stockId: params?.stockId, itemcode: params?.itemcode || undefined };
+  downloadWeighingStockExcel: async (params?: { stockId?: number; itemName?: string; itemcode?: string }): Promise<void> => {
+    const body = { stockId: params?.stockId, itemName: params?.itemName || undefined, itemcode: params?.itemcode || undefined };
     const response = await api.post('/reports/weighing-stock/excel', body);
     const res = response.data as { success?: boolean; data?: { buffer?: string; filename?: string; contentType?: string } };
     if (!res?.success || !res?.data?.buffer) throw new Error((res as any)?.error || 'ไม่สามารถสร้างไฟล์ได้');
@@ -1276,8 +1278,8 @@ export const reportsApi = {
   },
 
   /** รายงานสต๊อกตู้ Weighing - PDF */
-  downloadWeighingStockPdf: async (params?: { stockId?: number; itemcode?: string }): Promise<void> => {
-    const body = { stockId: params?.stockId, itemcode: params?.itemcode || undefined };
+  downloadWeighingStockPdf: async (params?: { stockId?: number; itemName?: string; itemcode?: string }): Promise<void> => {
+    const body = { stockId: params?.stockId, itemName: params?.itemName || undefined, itemcode: params?.itemcode || undefined };
     const response = await api.post('/reports/weighing-stock/pdf', body);
     const res = response.data as { success?: boolean; data?: { buffer?: string; filename?: string; contentType?: string } };
     if (!res?.success || !res?.data?.buffer) throw new Error((res as any)?.error || 'ไม่สามารถสร้างไฟล์ได้');
@@ -1622,7 +1624,7 @@ export const cabinetDepartmentApi = {
 
 // =========================== Weighing API (ItemSlotInCabinet) ===========================
 export const weighingApi = {
-  getAll: async (params?: { page?: number; limit?: number; itemcode?: string; stockId?: number }): Promise<{ success: boolean; data: any[]; pagination: { page: number; limit: number; total: number; totalPages: number } }> => {
+  getAll: async (params?: { page?: number; limit?: number; itemName?: string; itemcode?: string; stockId?: number }): Promise<{ success: boolean; data: any[]; pagination: { page: number; limit: number; total: number; totalPages: number } }> => {
     const response = await api.get('/weighing', { params });
     return response.data;
   },
@@ -1638,7 +1640,7 @@ export const weighingApi = {
   },
 
   /** รายการ Detail ตาม Sign: เบิก = '-', เติม = '+' */
-  getDetailsBySign: async (params: { sign: '-' | '+'; page?: number; limit?: number; itemcode?: string; stockId?: number; dateFrom?: string; dateTo?: string }): Promise<{ success: boolean; data: any[]; pagination: { page: number; limit: number; total: number; totalPages: number } }> => {
+  getDetailsBySign: async (params: { sign: '-' | '+'; page?: number; limit?: number; itemName?: string; itemcode?: string; stockId?: number; dateFrom?: string; dateTo?: string }): Promise<{ success: boolean; data: any[]; pagination: { page: number; limit: number; total: number; totalPages: number } }> => {
     const response = await api.get('/weighing/by-sign', { params: { ...params, sign: params.sign } });
     return response.data;
   },
