@@ -295,6 +295,7 @@ export default function WeighingDispensePage() {
           <Card className="shadow-sm border-gray-200/80 overflow-hidden">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 border-b bg-slate-50/50">
               <CardTitle className="text-lg">รายการเบิกอุปกรณ์จากตู้ Weighing</CardTitle>
+              
               <div className="flex items-center gap-3 flex-wrap">
                 <span className="text-sm text-muted-foreground">ทั้งหมด {totalItems} รายการ</span>
                 <div className="flex items-center gap-2">
@@ -323,7 +324,7 @@ export default function WeighingDispensePage() {
                 </div>
               </div>
             </CardHeader>
-            <CardContent className="p-0">
+            <CardContent className="p-4 sm:p-5">
               {loading ? (
                 <div className="py-12 text-center text-muted-foreground">กำลังโหลด...</div>
               ) : items.length === 0 ? (
@@ -365,7 +366,7 @@ export default function WeighingDispensePage() {
                     </Table>
                   </div>
                   {totalPages > 1 && (
-                    <div className="px-4 pb-4">
+                    <div className="pt-4">
                       <Pagination
                         currentPage={currentPage}
                         totalPages={totalPages}

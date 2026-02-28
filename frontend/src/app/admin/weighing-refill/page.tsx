@@ -323,7 +323,7 @@ export default function WeighingRefillPage() {
                 </div>
               </div>
             </CardHeader>
-            <CardContent className="p-0">
+            <CardContent className="p-4 sm:p-5">
               {loading ? (
                 <div className="py-12 text-center text-muted-foreground">กำลังโหลด...</div>
               ) : items.length === 0 ? (
@@ -365,7 +365,7 @@ export default function WeighingRefillPage() {
                     </Table>
                   </div>
                   {totalPages > 1 && (
-                    <div className="px-4 pb-4">
+                    <div className="pt-4">
                       <Pagination
                         currentPage={currentPage}
                         totalPages={totalPages}
