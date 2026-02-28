@@ -58,6 +58,9 @@ COPY --from=builder --chown=nestjs:nodejs /app/dist ./dist
 COPY --from=builder --chown=nestjs:nodejs /app/generated ./generated
 COPY --from=builder --chown=nestjs:nodejs /app/prisma ./prisma
 
+# โลโก้สำหรับรายงาน PDF (3_logo_p-1-fit.png)
+COPY --from=builder --chown=nestjs:nodejs /app/public ./public
+
 # โฟลเดอร์สำหรับ multer upload (item.controller)
 RUN mkdir -p /app/uploads && chown -R nestjs:nodejs /app/uploads
 
