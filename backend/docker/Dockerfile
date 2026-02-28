@@ -27,6 +27,10 @@ COPY . .
 # Generate Prisma client (output: generated/prisma)
 RUN npx prisma generate
 
+# ฟอนต์ไทยสำหรับรายงาน PDF — ใส่ THSarabunNew.ttf และ THSarabunNew Bold.ttf ใน backend/fonts/ ก่อน build
+RUN mkdir -p src/report/assets/fonts
+COPY fonts/ src/report/assets/fonts/
+
 # Build NestJS (output: dist/)
 RUN npm run build
 

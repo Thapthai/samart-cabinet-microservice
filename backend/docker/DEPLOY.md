@@ -38,7 +38,11 @@ docker compose -f docker/docker-compose.yml --env-file .env up -d --build
 ```bash
 # ดูสถานะ container
 docker compose -f docker/docker-compose.yml ps
+```
 
+**หมายเหตุ:** ถ้าโฟลเดอร์ `fonts/` ไม่มีอยู่ ให้สร้างก่อน build (ดูหัวข้อ "ตัวหนังสือในรายงาน PDF ผิดเพี้ยน" ด้านล่าง)
+
+```bash
 # ดู log
 docker compose -f docker/docker-compose.yml logs -f backend
 
@@ -62,3 +66,35 @@ docker compose -f docker/docker-compose.yml --env-file .env up -d --build
 # ดู log แบบ realtime
 docker compose -f docker/docker-compose.yml logs -f backend
 ```
+
+---
+
+## ตัวหนังสือในรายงาน PDF ผิดเพี้ยน (ภาษาไทยไม่ขึ้น)
+
+รายงาน PDF (เบิก/เติม/สต๊อกตู้ Weighing ฯลฯ) ใช้ฟอนต์ไทย **TH Sarabun New** ถ้าไม่มีฟอนต์ ตัวหนังสือจะผิดเพี้ยนหรือเป็นกล่อง
+
+### วิธีแก้
+
+1. **ดาวน์โหลดฟอนต์** (ชุดฟอนต์ของรัฐบาลไทย หรือแหล่งที่ให้ใช้ได้ตามลิขสิทธิ์)  
+   ต้องมีไฟล์:
+   - `THSarabunNew.ttf`
+   - `THSarabunNew Bold.ttf`
+
+2. **วางไฟล์ในโฟลเดอร์ `backend/fonts/`**  
+   จากโฟลเดอร์ backend ให้มีโครงแบบนี้:
+   ```
+   backend/
+     fonts/
+       THSarabunNew.ttf
+       THSarabunNew Bold.ttf
+   ```
+   (โฟลเดอร์ `backend/fonts/` มีอยู่แล้ว มีไฟล์ `.gitkeep` อยู่ข้างใน)
+
+3. **Build image ใหม่** แล้วรัน container ใหม่:
+   ```bash
+   cd /path/to/samart-cabinet-cu-app/backend
+   docker compose -f docker/docker-compose.yml --env-file .env up -d --build
+   ```
+
+หลัง build ใหม่ ฟอนต์จะถูก copy เข้า image และรายงาน PDF จะแสดงภาษาไทยได้ถูกต้อง
+

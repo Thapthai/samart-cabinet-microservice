@@ -14,6 +14,7 @@ const THAI_FONT_BOLD = 'THSarabunNew Bold.ttf';
  */
 export function resolveReportFontDir(): string | null {
   const candidates = [
+    path.join(process.cwd(), 'dist', 'report', 'assets', 'fonts'),
     path.join(process.cwd(), 'src', 'report', 'assets', 'fonts'),
     path.join(__dirname, '..', 'assets', 'fonts'),
     path.join(process.cwd(), 'assets', 'fonts'),
