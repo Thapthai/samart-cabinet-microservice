@@ -323,8 +323,10 @@ model Item {
   item_status              Int?      @default(0)
 
   // Relations
-  itemType   ItemType?   @relation(fields: [itemtypeID], references: [ID], onDelete: SetNull)
-  itemStocks ItemStock[]
+  itemType                ItemType?                 @relation(fields: [itemtypeID], references: [ID], onDelete: SetNull)
+  itemStocks              ItemStock[]
+  itemSlotInCabinet       ItemSlotInCabinet[]
+  itemSlotInCabinetDetail ItemSlotInCabinetDetail[] @relation("DetailToItem")
 
   @@index([itemtypeID])
   @@map("item")
@@ -671,8 +673,9 @@ model ItemSlotInCabinet {
   Qty      Int    @map("Qty")
 
   // Relations
-  itemSlotInCabinetDetail ItemSlotInCabinetDetail[]
-  cabinet cabinet? @relation(fields: [StockID], references: [stock_id])
+  itemSlotInCabinetDetail ItemSlotInCabinetDetail[] @relation("DetailToSlot")
+  cabinet                 cabinet?                  @relation(fields: [StockID], references: [stock_id])
+  item                    Item?                     @relation(fields: [itemcode], references: [itemcode])
 
   @@map("itemslotincabinet")
 }
@@ -692,7 +695,42 @@ model ItemSlotInCabinetDetail {
   Sign       String   @map("Sign")
 
   // Relations
-  itemSlotInCabinet ItemSlotInCabinet @relation(fields: [itemcode], references: [itemcode])
+  itemSlotInCabinet ItemSlotInCabinet @relation("DetailToSlot", fields: [itemcode], references: [itemcode], map: "detail_to_slot_fkey")
+  item             Item?             @relation("DetailToItem", fields: [itemcode], references: [itemcode], map: "detail_to_item_fkey")
+  userCabinet      UserCabinet?      @relation(fields: [UserID], references: [cabinet_finger_id])
 
   @@map("itemslotincabinet_detail")
+}
+
+// user_cabinet: links cabinet_finger_id (UserID in detail) to user_id -> users -> employee
+model UserCabinet {
+  id                Int    @id @default(autoincrement())
+  cabinet_finger_id Int    @unique @map("cabinet_finger_id")
+  user_id           Int    @map("user_id")
+
+  legacyUser        LegacyUsers           @relation(fields: [user_id], references: [id])
+  itemSlotInCabinetDetail ItemSlotInCabinetDetail[]
+
+  @@map("user_cabinet")
+}
+
+// users (legacy) - links to employee by EmpCode
+model LegacyUsers {
+  id       Int     @id @default(autoincrement())
+  EmpCode  String? @unique @map("EmpCode") @db.VarChar(20)
+
+  userCabinet UserCabinet[]
+  employee    Employee?   @relation(fields: [EmpCode], references: [EmpCode])
+
+  @@map("users")
+}
+
+model Employee {
+  EmpCode   String @id @map("EmpCode") @db.VarChar(20)
+  FirstName String? @map("FirstName") @db.VarChar(100)
+  LastName  String? @map("LastName") @db.VarChar(100)
+
+  legacyUsers LegacyUsers[]
+
+  @@map("employee")
 }

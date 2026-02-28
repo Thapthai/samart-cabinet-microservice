@@ -1164,6 +1164,136 @@ export const reportsApi = {
     link.remove();
     window.URL.revokeObjectURL(url);
   },
+
+  /** รายงานเบิกตู้ Weighing - Excel (เหมือน cabinet-stock: POST แล้ว decode base64 ดาวน์โหลด) */
+  downloadWeighingDispenseExcel: async (params?: { stockId?: number; itemcode?: string; dateFrom?: string; dateTo?: string }): Promise<void> => {
+    const body = {
+      stockId: params?.stockId,
+      itemcode: params?.itemcode || undefined,
+      dateFrom: params?.dateFrom || undefined,
+      dateTo: params?.dateTo || undefined,
+    };
+    const response = await api.post('/reports/weighing-dispense/excel', body);
+    const res = response.data as { success?: boolean; data?: { buffer?: string; filename?: string; contentType?: string } };
+    if (!res?.success || !res?.data?.buffer) throw new Error((res as any)?.error || 'ไม่สามารถสร้างไฟล์ได้');
+    const binary = atob(res.data.buffer);
+    const bytes = new Uint8Array(binary.length);
+    for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
+    const blob = new Blob([bytes], { type: res.data.contentType || 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+    const url = window.URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.setAttribute('download', res.data.filename || `weighing_dispense_report_${new Date().toISOString().split('T')[0]}.xlsx`);
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    window.URL.revokeObjectURL(url);
+  },
+
+  /** รายงานเบิกตู้ Weighing - PDF (เหมือน cabinet-stock) */
+  downloadWeighingDispensePdf: async (params?: { stockId?: number; itemcode?: string; dateFrom?: string; dateTo?: string }): Promise<void> => {
+    const body = {
+      stockId: params?.stockId,
+      itemcode: params?.itemcode || undefined,
+      dateFrom: params?.dateFrom || undefined,
+      dateTo: params?.dateTo || undefined,
+    };
+    const response = await api.post('/reports/weighing-dispense/pdf', body);
+    const res = response.data as { success?: boolean; data?: { buffer?: string; filename?: string; contentType?: string } };
+    if (!res?.success || !res?.data?.buffer) throw new Error((res as any)?.error || 'ไม่สามารถสร้างไฟล์ได้');
+    const binary = atob(res.data.buffer);
+    const bytes = new Uint8Array(binary.length);
+    for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
+    const blob = new Blob([bytes], { type: res.data.contentType || 'application/pdf' });
+    const url = window.URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.setAttribute('download', res.data.filename || `weighing_dispense_report_${new Date().toISOString().split('T')[0]}.pdf`);
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    window.URL.revokeObjectURL(url);
+  },
+
+  /** รายงานเติมตู้ Weighing - Excel */
+  downloadWeighingRefillExcel: async (params?: { stockId?: number; itemcode?: string; dateFrom?: string; dateTo?: string }): Promise<void> => {
+    const body = { stockId: params?.stockId, itemcode: params?.itemcode || undefined, dateFrom: params?.dateFrom || undefined, dateTo: params?.dateTo || undefined };
+    const response = await api.post('/reports/weighing-refill/excel', body);
+    const res = response.data as { success?: boolean; data?: { buffer?: string; filename?: string; contentType?: string } };
+    if (!res?.success || !res?.data?.buffer) throw new Error((res as any)?.error || 'ไม่สามารถสร้างไฟล์ได้');
+    const binary = atob(res.data.buffer);
+    const bytes = new Uint8Array(binary.length);
+    for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
+    const blob = new Blob([bytes], { type: res.data.contentType || 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+    const url = window.URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.setAttribute('download', res.data.filename || `weighing_refill_report_${new Date().toISOString().split('T')[0]}.xlsx`);
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    window.URL.revokeObjectURL(url);
+  },
+
+  /** รายงานเติมตู้ Weighing - PDF */
+  downloadWeighingRefillPdf: async (params?: { stockId?: number; itemcode?: string; dateFrom?: string; dateTo?: string }): Promise<void> => {
+    const body = { stockId: params?.stockId, itemcode: params?.itemcode || undefined, dateFrom: params?.dateFrom || undefined, dateTo: params?.dateTo || undefined };
+    const response = await api.post('/reports/weighing-refill/pdf', body);
+    const res = response.data as { success?: boolean; data?: { buffer?: string; filename?: string; contentType?: string } };
+    if (!res?.success || !res?.data?.buffer) throw new Error((res as any)?.error || 'ไม่สามารถสร้างไฟล์ได้');
+    const binary = atob(res.data.buffer);
+    const bytes = new Uint8Array(binary.length);
+    for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
+    const blob = new Blob([bytes], { type: res.data.contentType || 'application/pdf' });
+    const url = window.URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.setAttribute('download', res.data.filename || `weighing_refill_report_${new Date().toISOString().split('T')[0]}.pdf`);
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    window.URL.revokeObjectURL(url);
+  },
+
+  /** รายงานสต๊อกตู้ Weighing - Excel */
+  downloadWeighingStockExcel: async (params?: { stockId?: number; itemcode?: string }): Promise<void> => {
+    const body = { stockId: params?.stockId, itemcode: params?.itemcode || undefined };
+    const response = await api.post('/reports/weighing-stock/excel', body);
+    const res = response.data as { success?: boolean; data?: { buffer?: string; filename?: string; contentType?: string } };
+    if (!res?.success || !res?.data?.buffer) throw new Error((res as any)?.error || 'ไม่สามารถสร้างไฟล์ได้');
+    const binary = atob(res.data.buffer);
+    const bytes = new Uint8Array(binary.length);
+    for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
+    const blob = new Blob([bytes], { type: res.data.contentType || 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+    const url = window.URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.setAttribute('download', res.data.filename || `weighing_stock_report_${new Date().toISOString().split('T')[0]}.xlsx`);
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    window.URL.revokeObjectURL(url);
+  },
+
+  /** รายงานสต๊อกตู้ Weighing - PDF */
+  downloadWeighingStockPdf: async (params?: { stockId?: number; itemcode?: string }): Promise<void> => {
+    const body = { stockId: params?.stockId, itemcode: params?.itemcode || undefined };
+    const response = await api.post('/reports/weighing-stock/pdf', body);
+    const res = response.data as { success?: boolean; data?: { buffer?: string; filename?: string; contentType?: string } };
+    if (!res?.success || !res?.data?.buffer) throw new Error((res as any)?.error || 'ไม่สามารถสร้างไฟล์ได้');
+    const binary = atob(res.data.buffer);
+    const bytes = new Uint8Array(binary.length);
+    for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
+    const blob = new Blob([bytes], { type: res.data.contentType || 'application/pdf' });
+    const url = window.URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.setAttribute('download', res.data.filename || `weighing_stock_report_${new Date().toISOString().split('T')[0]}.pdf`);
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    window.URL.revokeObjectURL(url);
+  },
 };
 
 // =========================== Staff User API ===========================
@@ -1454,12 +1584,13 @@ export const cabinetApi = {
 // =========================== Cabinet Department Mapping API ===========================
 // Backend: cabinet-departments (GET/POST/PUT/DELETE), item-stocks/in-cabinet (GET)
 export const cabinetDepartmentApi = {
-  getAll: async (params?: { cabinetId?: number; departmentId?: number; status?: string; keyword?: string }): Promise<ApiResponse<any[]>> => {
+  getAll: async (params?: { cabinetId?: number; departmentId?: number; status?: string; keyword?: string; onlyWeighingCabinets?: boolean }): Promise<ApiResponse<any[]>> => {
     const apiParams: any = {};
     if (params?.cabinetId !== undefined) apiParams.cabinet_id = params.cabinetId;
     if (params?.departmentId !== undefined) apiParams.department_id = params.departmentId;
     if (params?.status !== undefined) apiParams.status = params.status;
     if (params?.keyword !== undefined && params.keyword !== "") apiParams.keyword = params.keyword;
+    if (params?.onlyWeighingCabinets === true) apiParams.only_weighing_cabinets = "true";
 
     const response = await api.get('/cabinet-departments', { params: apiParams });
     return response.data;
@@ -1507,8 +1638,14 @@ export const weighingApi = {
   },
 
   /** รายการ Detail ตาม Sign: เบิก = '-', เติม = '+' */
-  getDetailsBySign: async (params: { sign: '-' | '+'; page?: number; limit?: number; itemcode?: string; stockId?: number }): Promise<{ success: boolean; data: any[]; pagination: { page: number; limit: number; total: number; totalPages: number } }> => {
+  getDetailsBySign: async (params: { sign: '-' | '+'; page?: number; limit?: number; itemcode?: string; stockId?: number; dateFrom?: string; dateTo?: string }): Promise<{ success: boolean; data: any[]; pagination: { page: number; limit: number; total: number; totalPages: number } }> => {
     const response = await api.get('/weighing/by-sign', { params: { ...params, sign: params.sign } });
+    return response.data;
+  },
+
+  /** รายการตู้ที่มีสต๊อก Weighing (สำหรับ dropdown หน้า weighing-departments) */
+  getCabinets: async (): Promise<{ success: boolean; data: { id: number; cabinet_name: string | null; cabinet_code: string | null; cabinet_status?: string; stock_id: number | null }[] }> => {
+    const response = await api.get('/weighing/cabinets/list');
     return response.data;
   },
 };

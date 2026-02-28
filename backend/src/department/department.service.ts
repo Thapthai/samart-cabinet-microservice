@@ -219,14 +219,34 @@ export class DepartmentService {
     }
   }
 
-  async getCabinetDepartments(query?: { cabinet_id?: number; department_id?: number; status?: string; keyword?: string }) {
+  async getCabinetDepartments(query?: { cabinet_id?: number; department_id?: number; status?: string; keyword?: string; only_weighing_cabinets?: boolean }) {
     try {
       const where: any = {};
       if (query?.department_id) where.department_id = query.department_id;
       if (query?.status) where.status = query.status;
+      if (query?.only_weighing_cabinets) {
+        const slotStockIds = await this.prisma.itemSlotInCabinet.findMany({
+          select: { StockID: true },
+          distinct: ['StockID'],
+        });
+        const stockIds = [...new Set(slotStockIds.map((s) => s.StockID))].filter((id) => id != null && id > 0);
+        if (stockIds.length === 0) {
+          return { success: true, data: [], total: 0, page: 1, limit: 10, lastPage: 0 };
+        }
+        const cabinets = await this.prisma.cabinet.findMany({
+          where: { stock_id: { in: stockIds } },
+          select: { id: true },
+        });
+        const cabinetIds = cabinets.map((c) => c.id);
+        if (cabinetIds.length === 0) {
+          return { success: true, data: [], total: 0, page: 1, limit: 10, lastPage: 0 };
+        }
+        where.cabinet_id = { in: cabinetIds };
+      }
       if (query?.keyword?.trim()) {
         const matchingCabinets = await this.prisma.cabinet.findMany({
           where: {
+            ...(where.cabinet_id ? { id: where.cabinet_id } : {}),
             OR: [
               { cabinet_name: { contains: query.keyword } },
               { cabinet_code: { contains: query.keyword } },
@@ -236,9 +256,6 @@ export class DepartmentService {
         });
         const ids = matchingCabinets.map((c) => c.id);
         if (ids.length === 0) {
-          return { success: true, data: [], total: 0, page: 1, limit: 10, lastPage: 0 };
-        }
-        if (query?.cabinet_id && !ids.includes(query.cabinet_id)) {
           return { success: true, data: [], total: 0, page: 1, limit: 10, lastPage: 0 };
         }
         where.cabinet_id = query?.cabinet_id ? query.cabinet_id : { in: ids };
@@ -256,12 +273,21 @@ export class DepartmentService {
       const mappingsWithCount = await Promise.all(
         mappings.map(async (m) => {
           const stockId = m.cabinet?.stock_id;
-          if (!stockId) return { ...m, itemstock_count: 0, itemstock_dispensed_count: 0 };
-          const [inCabinetCount, dispensedCount] = await Promise.all([
-            this.prisma.itemStock.count({ where: { StockID: stockId, IsStock: true } }),
-            this.prisma.itemStock.count({ where: { StockID: stockId, IsStock: false } }),
-          ]);
-          return { ...m, itemstock_count: inCabinetCount, itemstock_dispensed_count: dispensedCount };
+          let itemstock_count = 0;
+          let itemstock_dispensed_count = 0;
+          let weighing_slot_count = 0;
+          let weighing_dispense_count = 0;
+          let weighing_refill_count = 0;
+          if (stockId) {
+            [itemstock_count, itemstock_dispensed_count, weighing_slot_count, weighing_dispense_count, weighing_refill_count] = await Promise.all([
+              this.prisma.itemStock.count({ where: { StockID: stockId, IsStock: true } }),
+              this.prisma.itemStock.count({ where: { StockID: stockId, IsStock: false } }),
+              this.prisma.itemSlotInCabinet.count({ where: { StockID: stockId } }),
+              this.prisma.itemSlotInCabinetDetail.count({ where: { StockID: stockId, Sign: '-' } }),
+              this.prisma.itemSlotInCabinetDetail.count({ where: { StockID: stockId, Sign: '+' } }),
+            ]);
+          }
+          return { ...m, itemstock_count, itemstock_dispensed_count, weighing_slot_count, weighing_dispense_count, weighing_refill_count };
         }),
       );
       return {

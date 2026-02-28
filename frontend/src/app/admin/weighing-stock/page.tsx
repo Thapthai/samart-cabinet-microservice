@@ -2,11 +2,11 @@
 
 import { useEffect, useState } from 'react';
 import { useAuth } from '@/hooks/useAuth';
-import { weighingApi, cabinetApi } from '@/lib/api';
+import { weighingApi, cabinetApi, reportsApi } from '@/lib/api';
 import ProtectedRoute from '@/components/ProtectedRoute';
 import AppLayout from '@/components/AppLayout';
 import { toast } from 'sonner';
-import { Package, Search, X } from 'lucide-react';
+import { Package, Search, X, Download } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
@@ -28,6 +28,7 @@ export interface ItemSlotInCabinetRow {
   Sensor: number;
   Qty: number;
   cabinet?: { id: number; cabinet_name: string | null; cabinet_code: string | null; stock_id: number | null } | null;
+  item?: { itemcode: string; itemname: string | null; Alternatename: string | null; Barcode: string | null } | null;
   _count?: { itemSlotInCabinetDetail: number };
 }
 
@@ -52,6 +53,7 @@ export default function WeighingPage() {
   const [totalPages, setTotalPages] = useState(1);
   const [totalItems, setTotalItems] = useState(0);
   const itemsPerPage = 20;
+  const [exportLoading, setExportLoading] = useState<'excel' | 'pdf' | null>(null);
 
   useEffect(() => {
     if (user?.id) {
@@ -124,6 +126,36 @@ export default function WeighingPage() {
   };
 
   const hasActiveFilters = itemcodeFilter || stockIdFilter;
+
+  const handleDownloadWeighingStockExcel = async () => {
+    try {
+      setExportLoading('excel');
+      const stockId = stockIdFilter ? parseInt(stockIdFilter, 10) : undefined;
+      const itemcode = itemcodeFilter || undefined;
+      await reportsApi.downloadWeighingStockExcel({ stockId, itemcode });
+      toast.success('ดาวน์โหลดรายงาน Excel สำเร็จ');
+    } catch (e) {
+      console.error(e);
+      toast.error('ดาวน์โหลดรายงานไม่สำเร็จ');
+    } finally {
+      setExportLoading(null);
+    }
+  };
+
+  const handleDownloadWeighingStockPdf = async () => {
+    try {
+      setExportLoading('pdf');
+      const stockId = stockIdFilter ? parseInt(stockIdFilter, 10) : undefined;
+      const itemcode = itemcodeFilter || undefined;
+      await reportsApi.downloadWeighingStockPdf({ stockId, itemcode });
+      toast.success('ดาวน์โหลดรายงาน PDF สำเร็จ');
+    } catch (e) {
+      console.error(e);
+      toast.error('ดาวน์โหลดรายงานไม่สำเร็จ');
+    } finally {
+      setExportLoading(null);
+    }
+  };
 
   return (
     <ProtectedRoute>
@@ -199,9 +231,33 @@ export default function WeighingPage() {
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0">
               <CardTitle>รายการสต๊อกในตู้ Weighing</CardTitle>
-              <span className="text-sm text-muted-foreground">
-                ทั้งหมด {totalItems} รายการ
-              </span>
+              <div className="flex items-center gap-2">
+                <span className="text-sm text-muted-foreground">
+                  ทั้งหมด {totalItems} รายการ
+                </span>
+                <div className="flex flex-wrap items-center gap-2">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={handleDownloadWeighingStockExcel}
+                    disabled={exportLoading !== null}
+                  >
+                    <Download className="h-4 w-4 mr-1.5" />
+                    {exportLoading === 'excel' ? 'กำลังโหลด...' : 'Excel'}
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={handleDownloadWeighingStockPdf}
+                    disabled={exportLoading !== null}
+                  >
+                    <Download className="h-4 w-4 mr-1.5" />
+                    {exportLoading === 'pdf' ? 'กำลังโหลด...' : 'PDF'}
+                  </Button>
+                </div>
+              </div>
             </CardHeader>
             <CardContent>
               {loading ? (
@@ -213,28 +269,31 @@ export default function WeighingPage() {
                   <Table>
                     <TableHeader>
                       <TableRow>
-                        <TableHead className="w-16">ID</TableHead>
-                        <TableHead>itemcode</TableHead>
-                        <TableHead>ตู้</TableHead>
-                        <TableHead>StockID</TableHead>
-                        <TableHead>SlotNo</TableHead>
-                        <TableHead>Sensor</TableHead>
-                        <TableHead className="text-right">Qty</TableHead>
+                        <TableHead className="w-16">ลำดับ</TableHead>
+
+                        <TableHead>ชื่อสินค้า</TableHead>
+                        <TableHead className="text-center">ตู้</TableHead>
+                        <TableHead className="text-center">ช่อง</TableHead>
+                        <TableHead className="text-center">สล็อต</TableHead>
+                        <TableHead className="text-right">จำนวน</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
-                      {items.map((row) => (
+                      {items.map((row, index) => (
                         <TableRow key={row.id}>
-                          <TableCell className="text-muted-foreground">{row.id}</TableCell>
-                          <TableCell className="font-medium">{row.itemcode}</TableCell>
-                          <TableCell>
+                          <TableCell className="text-muted-foreground">
+                            {(currentPage - 1) * itemsPerPage + index + 1}
+                          </TableCell>
+                          <TableCell className="max-w-[200px] truncate" title={row.item?.itemname ?? undefined}>
+                            {row.item?.itemname || row.item?.Alternatename || '-'}
+                          </TableCell>
+                          <TableCell className="text-center">
                             {row.cabinet
                               ? row.cabinet.cabinet_name || row.cabinet.cabinet_code || '-'
                               : '-'}
                           </TableCell>
-                          <TableCell>{row.StockID}</TableCell>
-                          <TableCell>{row.SlotNo}</TableCell>
-                          <TableCell>{row.Sensor}</TableCell>
+                          <TableCell className="text-center">{row.SlotNo}</TableCell>
+                          <TableCell className="text-center">{row.Sensor}</TableCell>
                           <TableCell className="text-right">{row.Qty}</TableCell>
                         </TableRow>
                       ))}

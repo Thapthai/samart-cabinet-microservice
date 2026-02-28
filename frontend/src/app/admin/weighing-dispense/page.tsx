@@ -2,11 +2,11 @@
 
 import { useEffect, useState } from 'react';
 import { useAuth } from '@/hooks/useAuth';
-import { weighingApi, cabinetApi } from '@/lib/api';
+import { weighingApi, cabinetApi, reportsApi } from '@/lib/api';
 import ProtectedRoute from '@/components/ProtectedRoute';
 import AppLayout from '@/components/AppLayout';
 import { toast } from 'sonner';
-import { Package, Search, X } from 'lucide-react';
+import { Package, Search, X, Download } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
@@ -20,6 +20,10 @@ import {
 } from '@/components/ui/select';
 import Pagination from '@/components/Pagination';
 
+function getTodayISO(): string {
+  return new Date().toISOString().slice(0, 10);
+}
+
 interface DetailRow {
   id: number;
   itemcode: string;
@@ -30,6 +34,17 @@ interface DetailRow {
   Qty: number;
   ModifyDate: string;
   Sign: string;
+  item?: {
+    itemcode: string;
+    itemname: string | null;
+    Alternatename: string | null;
+    Barcode: string | null;
+  } | null;
+  userCabinet?: {
+    legacyUser?: {
+      employee?: { FirstName: string | null; LastName: string | null } | null;
+    } | null;
+  } | null;
 }
 
 interface CabinetOption {
@@ -53,6 +68,11 @@ export default function WeighingDispensePage() {
   const [totalPages, setTotalPages] = useState(1);
   const [totalItems, setTotalItems] = useState(0);
   const itemsPerPage = 20;
+  const [exportLoading, setExportLoading] = useState<'excel' | 'pdf' | null>(null);
+  const [dateFrom, setDateFrom] = useState(getTodayISO);
+  const [dateTo, setDateTo] = useState(getTodayISO);
+  const [dateFromFilter, setDateFromFilter] = useState(getTodayISO);
+  const [dateToFilter, setDateToFilter] = useState(getTodayISO);
 
   useEffect(() => {
     if (user?.id) fetchCabinets();
@@ -60,7 +80,7 @@ export default function WeighingDispensePage() {
 
   useEffect(() => {
     if (user?.id) fetchList();
-  }, [user?.id, currentPage, itemcodeFilter, stockIdFilter]);
+  }, [user?.id, currentPage, itemcodeFilter, stockIdFilter, dateFromFilter, dateToFilter]);
 
   const fetchCabinets = async () => {
     try {
@@ -85,6 +105,8 @@ export default function WeighingDispensePage() {
         limit: itemsPerPage,
         itemcode: itemcodeFilter || undefined,
         stockId: stockIdFilter ? parseInt(stockIdFilter, 10) : undefined,
+        dateFrom: dateFromFilter || undefined,
+        dateTo: dateToFilter || undefined,
       });
       if (res?.success && Array.isArray(res.data)) {
         setItems(res.data);
@@ -107,6 +129,8 @@ export default function WeighingDispensePage() {
   const handleSearch = () => {
     setItemcodeFilter(searchTerm.trim());
     setStockIdFilter(selectedStockId);
+    setDateFromFilter(dateFrom);
+    setDateToFilter(dateTo);
     setCurrentPage(1);
   };
 
@@ -115,6 +139,11 @@ export default function WeighingDispensePage() {
     setItemcodeFilter('');
     setStockIdFilter('');
     setSelectedStockId('');
+    const today = getTodayISO();
+    setDateFrom(today);
+    setDateTo(today);
+    setDateFromFilter(today);
+    setDateToFilter(today);
     setCurrentPage(1);
   };
 
@@ -123,10 +152,50 @@ export default function WeighingDispensePage() {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
-  const hasActiveFilters = itemcodeFilter || stockIdFilter;
+  const hasActiveFilters = itemcodeFilter || stockIdFilter || dateFromFilter !== getTodayISO() || dateToFilter !== getTodayISO();
   const totalQty = items.reduce((sum, row) => sum + (row.Qty ?? 0), 0);
 
-  const formatDate = (d: string) => (d ? new Date(d).toLocaleString('th-TH') : '-');
+  const formatDate = (d: string) => {
+    if (!d) return '-';
+    const date = new Date(d);
+    const y = date.getUTCFullYear();
+    const m = String(date.getUTCMonth() + 1).padStart(2, '0');
+    const day = String(date.getUTCDate()).padStart(2, '0');
+    const h = String(date.getUTCHours()).padStart(2, '0');
+    const min = String(date.getUTCMinutes()).padStart(2, '0');
+    const sec = String(date.getUTCSeconds()).padStart(2, '0');
+    return `${y}-${m}-${day} ${h}:${min}:${sec}`;
+  };
+
+  const handleDownloadWeighingDispenseExcel = async () => {
+    try {
+      setExportLoading('excel');
+      const stockId = stockIdFilter ? parseInt(stockIdFilter, 10) : undefined;
+      const itemcode = itemcodeFilter || undefined;
+      await reportsApi.downloadWeighingDispenseExcel({ stockId, itemcode, dateFrom: dateFromFilter, dateTo: dateToFilter });
+      toast.success('ดาวน์โหลดรายงาน Excel สำเร็จ');
+    } catch (e) {
+      console.error(e);
+      toast.error('ดาวน์โหลดรายงานไม่สำเร็จ');
+    } finally {
+      setExportLoading(null);
+    }
+  };
+
+  const handleDownloadWeighingDispensePdf = async () => {
+    try {
+      setExportLoading('pdf');
+      const stockId = stockIdFilter ? parseInt(stockIdFilter, 10) : undefined;
+      const itemcode = itemcodeFilter || undefined;
+      await reportsApi.downloadWeighingDispensePdf({ stockId, itemcode, dateFrom: dateFromFilter, dateTo: dateToFilter });
+      toast.success('ดาวน์โหลดรายงาน PDF สำเร็จ');
+    } catch (e) {
+      console.error(e);
+      toast.error('ดาวน์โหลดรายงานไม่สำเร็จ');
+    } finally {
+      setExportLoading(null);
+    }
+  };
 
   return (
     <ProtectedRoute>
@@ -138,7 +207,7 @@ export default function WeighingDispensePage() {
             </div>
             <div>
               <h1 className="text-2xl font-bold text-gray-900">เบิกอุปกรณ์จากตู้ Weighing</h1>
-              <p className="text-sm text-gray-500 mt-1">การเบิกอุปกรณ์จากตู้ Weighing (Sign = -)</p>
+              <p className="text-sm text-gray-500 mt-1">การเบิกอุปกรณ์จากตู้ Weighing</p>
             </div>
           </div>
 
@@ -155,7 +224,7 @@ export default function WeighingDispensePage() {
 
           <Card className="border-purple-100 bg-gradient-to-br from-slate-50 to-purple-50/30">
             <CardContent className="pt-6">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 items-end">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 items-end">
                 <div className="space-y-1.5">
                   <label className="text-sm font-medium text-gray-700">รหัสสินค้า (itemcode)</label>
                   <Input
@@ -186,6 +255,24 @@ export default function WeighingDispensePage() {
                     </SelectContent>
                   </Select>
                 </div>
+                <div className="space-y-1.5">
+                  <label className="text-sm font-medium text-gray-700">วันที่เริ่มต้น</label>
+                  <Input
+                    type="date"
+                    value={dateFrom}
+                    onChange={(e) => setDateFrom(e.target.value)}
+                    className="w-full bg-white border-gray-200"
+                  />
+                </div>
+                <div className="space-y-1.5">
+                  <label className="text-sm font-medium text-gray-700">วันที่สิ้นสุด</label>
+                  <Input
+                    type="date"
+                    value={dateTo}
+                    onChange={(e) => setDateTo(e.target.value)}
+                    className="w-full bg-white border-gray-200"
+                  />
+                </div>
               </div>
               <div className="flex gap-2 mt-4">
                 <Button onClick={handleSearch} disabled={loading} className="shadow-sm">
@@ -207,8 +294,32 @@ export default function WeighingDispensePage() {
 
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0">
-              <CardTitle>รายการเบิกอุปกรณ์จากตู้ Weighing (Sign = -)</CardTitle>
-              <span className="text-sm text-muted-foreground">ทั้งหมด {totalItems} รายการ</span>
+              <CardTitle>รายการเบิกอุปกรณ์จากตู้ Weighing</CardTitle>
+              <div className="flex items-center gap-2">
+                <span className="text-sm text-muted-foreground">ทั้งหมด {totalItems} รายการ</span>
+                <div className="flex flex-wrap items-center gap-2">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={handleDownloadWeighingDispenseExcel}
+                    disabled={exportLoading !== null}
+                  >
+                    <Download className="h-4 w-4 mr-1.5" />
+                    {exportLoading === 'excel' ? 'กำลังโหลด...' : 'Excel'}
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={handleDownloadWeighingDispensePdf}
+                    disabled={exportLoading !== null}
+                  >
+                    <Download className="h-4 w-4 mr-1.5" />
+                    {exportLoading === 'pdf' ? 'กำลังโหลด...' : 'PDF'}
+                  </Button>
+                </div>
+              </div>
             </CardHeader>
             <CardContent>
               {loading ? (
@@ -220,25 +331,29 @@ export default function WeighingDispensePage() {
                   <Table>
                     <TableHeader>
                       <TableRow>
-                        <TableHead className="w-16">ID</TableHead>
-                        <TableHead>itemcode</TableHead>
-                        <TableHead>StockID</TableHead>
-                        <TableHead>SlotNo</TableHead>
-                        <TableHead>Sensor</TableHead>
-                        <TableHead className="text-right">Qty</TableHead>
-                        <TableHead>วันที่แก้ไข</TableHead>
+                        <TableHead className="w-[8%]">ลำดับ</TableHead>
+                        <TableHead className="w-[35%]">ชื่อสินค้า</TableHead>
+                        <TableHead className="w-[22%]">ผู้ดำเนินการ</TableHead>
+                        <TableHead className="w-[10%] text-center">จำนวน</TableHead>
+                        <TableHead className="w-[25%] text-right">วันที่แก้ไข</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
-                      {items.map((row) => (
+                      {items.map((row, index) => (
                         <TableRow key={row.id}>
-                          <TableCell className="text-muted-foreground">{row.id}</TableCell>
-                          <TableCell className="font-medium">{row.itemcode}</TableCell>
-                          <TableCell>{row.StockID}</TableCell>
-                          <TableCell>{row.SlotNo}</TableCell>
-                          <TableCell>{row.Sensor}</TableCell>
-                          <TableCell className="text-right">{row.Qty}</TableCell>
-                          <TableCell className="text-muted-foreground text-sm">
+                          <TableCell className="text-muted-foreground">
+                            {(currentPage - 1) * itemsPerPage + index + 1}
+                          </TableCell>
+                          <TableCell className="max-w-[200px] truncate" title={row.item?.itemname ?? undefined}>
+                            {row.item?.itemname || row.item?.Alternatename || '-'}
+                          </TableCell>
+                          <TableCell className="text-sm">
+                            {row.userCabinet?.legacyUser?.employee
+                              ? [row.userCabinet.legacyUser.employee.FirstName, row.userCabinet.legacyUser.employee.LastName].filter(Boolean).join(' ') || '-'
+                              : '-'}
+                          </TableCell>
+                          <TableCell className="text-center">{row.Qty}</TableCell>
+                          <TableCell className="text-right text-muted-foreground text-sm">
                             {formatDate(row.ModifyDate)}
                           </TableCell>
                         </TableRow>

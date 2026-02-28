@@ -1,6 +1,7 @@
 import { Module } from '@nestjs/common';
 import { PrismaModule } from '../prisma/prisma.module';
 import { MedicalSuppliesModule } from '../medical-supplies/medical-supplies.module';
+import { WeighingModule } from '../weighing/weighing.module';
 import { ReportServiceController } from './report.controller';
 import { ReportServiceService } from './report-service.service';
 import { ComparisonReportExcelService } from './services/comparison_report_excel.service';
@@ -25,10 +26,16 @@ import { DispensedItemsExcelService } from './services/dispensed-items-excel.ser
 import { DispensedItemsPdfService } from './services/dispensed-items-pdf.service';
 import { CabinetStockReportExcelService } from './services/cabinet-stock-report-excel.service';
 import { CabinetStockReportPdfService } from './services/cabinet-stock-report-pdf.service';
+import { WeighingDispenseReportExcelService } from './services/weighing-dispense-report-excel.service';
+import { WeighingDispenseReportPdfService } from './services/weighing-dispense-report-pdf.service';
+import { WeighingRefillReportExcelService } from './services/weighing-refill-report-excel.service';
+import { WeighingRefillReportPdfService } from './services/weighing-refill-report-pdf.service';
+import { WeighingStockReportExcelService } from './services/weighing-stock-report-excel.service';
+import { WeighingStockReportPdfService } from './services/weighing-stock-report-pdf.service';
 import { DispensedItemsForPatientsExcelService } from './services/dispensed-items-for-patients-excel.service';
 import { DispensedItemsForPatientsPdfService } from './services/dispensed-items-for-patients-pdf.service';
 @Module({
-  imports: [PrismaModule, MedicalSuppliesModule],
+  imports: [PrismaModule, MedicalSuppliesModule, WeighingModule],
   controllers: [ReportServiceController],
   providers: [
     ReportServiceService,
@@ -54,6 +61,12 @@ import { DispensedItemsForPatientsPdfService } from './services/dispensed-items-
     DispensedItemsPdfService,
     CabinetStockReportExcelService,
     CabinetStockReportPdfService,
+    WeighingDispenseReportExcelService,
+    WeighingDispenseReportPdfService,
+    WeighingRefillReportExcelService,
+    WeighingRefillReportPdfService,
+    WeighingStockReportExcelService,
+    WeighingStockReportPdfService,
     DispensedItemsForPatientsExcelService,
     DispensedItemsForPatientsPdfService,
   ],

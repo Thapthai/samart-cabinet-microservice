@@ -62,12 +62,12 @@ const mainMenuItems: MenuItem[] = [
     noHref: true,
     submenu: [
 
-      {
-        name: "จัดการตู้ Cabinet - แผนก",
-        href: "/admin/cabinet-departments",
-        icon: Network,
-        description: "จัดการตู้ Cabinet และเชื่อมโยงกับแผนก",
-      },
+      // {
+      //   name: "จัดการตู้ Cabinet - แผนก",
+      //   href: "/admin/cabinet-departments",
+      //   icon: Network,
+      //   description: "จัดการตู้ Cabinet และเชื่อมโยงกับแผนก",
+      // },
       // {
       //   name: "สต๊อกอุปกรณ์ในตู้",
       //   href: "/admin/items",
@@ -107,11 +107,16 @@ const mainMenuItems: MenuItem[] = [
       //   description: "เปรียบเทียบการเบิกกับการใช้งานตามเวชภัณฑ์",
       //   icon: FileBarChart,
       // },
-
+      {
+        name: "จัดการตู้ Weighing - แผนก",
+        href: "/admin/weighing-departments",
+        icon: Network,
+        description: "จัดการตู้ Weighing และเชื่อมโยงกับแผนก",
+      },
 
       {
         name: "สต๊อกอุปกรณ์ในตู้ ",
-        href: "/admin/weighing",
+        href: "/admin/weighing-stock",
         description: "เมนูสต๊อกอุปกรณ์ที่มีในตู้ Weighing",
         icon: Package,
       },
@@ -170,18 +175,18 @@ const mainMenuItems: MenuItem[] = [
         icon: Package,
         description: "จัดการตู้ Cabinet",
       },
-      {
-        name: "Staff Users",
-        href: "/admin/management/staff-users",
-        icon: Users,
-        description: "จัดการ Staff Users และ Client Credentials",
-      },
-      {
-        name: "Staff Permission Role",
-        href: "/admin/management/permission-role",
-        icon: Users,
-        description: "จัดการ Staff Permission Role",
-      },
+      // {
+      //   name: "Staff Users",
+      //   href: "/admin/management/staff-users",
+      //   icon: Users,
+      //   description: "จัดการ Staff Users และ Client Credentials",
+      // },
+      // {
+      //   name: "Staff Permission Role",
+      //   href: "/admin/management/permission-role",
+      //   icon: Users,
+      //   description: "จัดการ Staff Permission Role",
+      // },
     ],
   },
   // {

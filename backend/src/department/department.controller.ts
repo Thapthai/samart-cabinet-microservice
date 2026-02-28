@@ -87,12 +87,14 @@ export class CabinetDepartmentController {
     @Query('department_id') department_id?: string,
     @Query('status') status?: string,
     @Query('keyword') keyword?: string,
+    @Query('only_weighing_cabinets') only_weighing_cabinets?: string,
   ) {
     const query = {
       cabinet_id: cabinet_id ? parseInt(cabinet_id, 10) : undefined,
       department_id: department_id ? parseInt(department_id, 10) : undefined,
       status,
       keyword,
+      only_weighing_cabinets: only_weighing_cabinets === 'true' || only_weighing_cabinets === '1',
     };
     return this.departmentService.getCabinetDepartments(query);
   }

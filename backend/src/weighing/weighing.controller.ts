@@ -26,7 +26,7 @@ export class WeighingController {
 
   /**
    * GET /weighing/by-sign — รายการ Detail ตาม Sign (เบิก = '-', เติม = '+')
-   * Query: sign, page, limit, itemcode, stockId
+   * Query: sign, page, limit, itemcode, stockId, dateFrom, dateTo (YYYY-MM-DD)
    */
   @Get('by-sign')
   findBySign(
@@ -35,12 +35,16 @@ export class WeighingController {
     @Query('limit') limit?: string,
     @Query('itemcode') itemcode?: string,
     @Query('stockId') stockId?: string,
+    @Query('dateFrom') dateFrom?: string,
+    @Query('dateTo') dateTo?: string,
   ) {
     return this.weighingService.findDetailsBySign(sign === '+' ? '+' : '-', {
       page: page ? parseInt(page, 10) : undefined,
       limit: limit ? parseInt(limit, 10) : undefined,
       itemcode,
       stockId: stockId ? parseInt(stockId, 10) : undefined,
+      dateFrom,
+      dateTo,
     });
   }
 
@@ -57,6 +61,14 @@ export class WeighingController {
       page: page ? parseInt(page, 10) : undefined,
       limit: limit ? parseInt(limit, 10) : undefined,
     });
+  }
+
+  /**
+   * GET /weighing/cabinets/list — รายการตู้ที่มีสต๊อก Weighing (สำหรับ dropdown หน้า weighing-departments)
+   */
+  @Get('cabinets/list')
+  getCabinets() {
+    return this.weighingService.findCabinetsWithWeighingStock();
   }
 
   /**

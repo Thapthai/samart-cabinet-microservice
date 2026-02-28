@@ -4,6 +4,39 @@ import * as fs from 'fs';
 /** รายงานสต๊อกอุปกรณ์ในตู้ - ชื่อไฟล์โลโก้ */
 const CABINET_REPORT_LOGO_FILENAME = '3_logo_p-1-fit.png';
 
+/** ฟอนต์ไทยสำหรับ PDF (โฟลเดอร์ backend/src/report/assets/fonts) */
+const THAI_FONT_REGULAR = 'THSarabunNew.ttf';
+const THAI_FONT_BOLD = 'THSarabunNew Bold.ttf';
+
+/**
+ * หาโฟลเดอร์ฟอนต์ไทยสำหรับรายงาน PDF
+ * ใช้โฟลเดอร์ backend/src/report/assets/fonts (วาง THSarabunNew.ttf และ THSarabunNew Bold.ttf)
+ */
+export function resolveReportFontDir(): string | null {
+  const candidates = [
+    path.join(process.cwd(), 'src', 'report', 'assets', 'fonts'),
+    path.join(__dirname, '..', 'assets', 'fonts'),
+    path.join(process.cwd(), 'assets', 'fonts'),
+    path.join(process.cwd(), 'backend', 'src', 'report', 'assets', 'fonts'),
+  ];
+  for (const dir of candidates) {
+    const regularPath = path.join(dir, THAI_FONT_REGULAR);
+    if (fs.existsSync(regularPath)) return dir;
+  }
+  return null;
+}
+
+export function getReportThaiFontPaths(): { regular: string; bold: string } | null {
+  const dir = resolveReportFontDir();
+  if (!dir) return null;
+  const regular = path.join(dir, THAI_FONT_REGULAR);
+  const bold = path.join(dir, THAI_FONT_BOLD);
+  return {
+    regular,
+    bold: fs.existsSync(bold) ? bold : regular,
+  };
+}
+
 /**
  * หา path ไฟล์โลโก้สำหรับรายงานสต๊อกอุปกรณ์ในตู้ (3_logo_p-1-fit.png)
  * ลองตามลำดับ: public/, uploads/items/, backend/public, __dirname relative

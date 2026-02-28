@@ -378,11 +378,11 @@ export default function LoginPage() {
               </div>
 
               <div className="space-y-2">
-                <Link href="/auth/staff/login">
+                {/* <Link href="/auth/staff/login">
                   <Button variant="outline" className="w-full border-2 hover:bg-green-50 hover:border-green-600 transition-all">
                     เข้าสู่ระบบ Staff
                   </Button>
-                </Link>
+                </Link> */}
                 
                 <Link href="/">
                   <Button variant="ghost" className="w-full text-gray-600 hover:text-gray-900">

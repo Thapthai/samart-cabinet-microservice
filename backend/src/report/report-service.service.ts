@@ -28,6 +28,18 @@ import {
 } from './services/cabinet-stock-report-excel.service';
 import { CabinetStockReportPdfService } from './services/cabinet-stock-report-pdf.service';
 import {
+  WeighingDispenseReportExcelService,
+  WeighingDispenseReportData,
+} from './services/weighing-dispense-report-excel.service';
+import { WeighingDispenseReportPdfService } from './services/weighing-dispense-report-pdf.service';
+import { WeighingRefillReportExcelService } from './services/weighing-refill-report-excel.service';
+import { WeighingRefillReportPdfService } from './services/weighing-refill-report-pdf.service';
+import {
+  WeighingStockReportExcelService,
+  WeighingStockReportData,
+} from './services/weighing-stock-report-excel.service';
+import { WeighingStockReportPdfService } from './services/weighing-stock-report-pdf.service';
+import {
   DispensedItemsForPatientsExcelService,
   DispensedItemsForPatientsReportData,
 } from './services/dispensed-items-for-patients-excel.service';
@@ -36,6 +48,8 @@ import { ComparisonReportData } from './types/comparison-report.types';
 import { EquipmentUsageReportData } from './types/equipment-usage-report.types';
 import { EquipmentDisbursementReportData } from './types/equipment-disbursement-report.types';
 import { ItemComparisonReportData } from './types/item-comparison-report.types';
+import { WeighingService } from '../weighing/weighing.service';
+
 @Injectable()
 export class ReportServiceService {
   constructor(
@@ -63,6 +77,13 @@ export class ReportServiceService {
     private readonly dispensedItemsPdfService: DispensedItemsPdfService,
     private readonly cabinetStockReportExcelService: CabinetStockReportExcelService,
     private readonly cabinetStockReportPdfService: CabinetStockReportPdfService,
+    private readonly weighingDispenseReportExcelService: WeighingDispenseReportExcelService,
+    private readonly weighingDispenseReportPdfService: WeighingDispenseReportPdfService,
+    private readonly weighingRefillReportExcelService: WeighingRefillReportExcelService,
+    private readonly weighingRefillReportPdfService: WeighingRefillReportPdfService,
+    private readonly weighingStockReportExcelService: WeighingStockReportExcelService,
+    private readonly weighingStockReportPdfService: WeighingStockReportPdfService,
+    private readonly weighingService: WeighingService,
     private readonly dispensedItemsForPatientsExcelService: DispensedItemsForPatientsExcelService,
     private readonly dispensedItemsForPatientsPdfService: DispensedItemsForPatientsPdfService,
   ) {}
@@ -2595,7 +2616,315 @@ export class ReportServiceService {
   }
 
   /**
-   * Get Dispensed Items for Patients Report Data (รายการเบิกอุปกรณ์ใช้กับคนไข้)
+   * Generate Weighing Dispense Report (รายการเบิกตู้ Weighing) - Excel
+   */
+  async generateWeighingDispenseExcel(params: {
+    stockId?: number;
+    itemcode?: string;
+    dateFrom?: string;
+    dateTo?: string;
+  }): Promise<{ buffer: Buffer; filename: string }> {
+    try {
+      const res = await this.weighingService.findDetailsBySign('-', {
+        page: 1,
+        limit: 10000,
+        itemcode: params?.itemcode?.trim() || undefined,
+        stockId: params?.stockId,
+        dateFrom: params?.dateFrom?.trim() || undefined,
+        dateTo: params?.dateTo?.trim() || undefined,
+      });
+      const rows = Array.isArray((res as any)?.data) ? (res as any).data : [];
+      const totalQty = rows.reduce((sum: number, r: any) => sum + (Number(r?.Qty) || 0), 0);
+      const formatDate = (d: string) => {
+        if (!d) return '-';
+        const date = new Date(d);
+        const y = date.getUTCFullYear();
+        const m = String(date.getUTCMonth() + 1).padStart(2, '0');
+        const day = String(date.getUTCDate()).padStart(2, '0');
+        const h = String(date.getUTCHours()).padStart(2, '0');
+        const min = String(date.getUTCMinutes()).padStart(2, '0');
+        const sec = String(date.getUTCSeconds()).padStart(2, '0');
+        return `${y}-${m}-${day} ${h}:${min}:${sec}`;
+      };
+      const employeeName = (r: any) => {
+        const emp = r?.userCabinet?.legacyUser?.employee;
+        if (!emp) return '-';
+        const parts = [emp.FirstName, emp.LastName].filter(Boolean);
+        return parts.length ? parts.join(' ') : '-';
+      };
+      const reportData: WeighingDispenseReportData = {
+        filters: { stockId: params?.stockId, itemcode: params?.itemcode, dateFrom: params?.dateFrom, dateTo: params?.dateTo },
+        summary: { total_rows: rows.length, total_qty: totalQty },
+        data: rows.map((r: any, i: number) => ({
+          seq: i + 1,
+          item_name: r?.item?.itemname || r?.item?.Alternatename || r?.itemcode || '-',
+          operator_name: employeeName(r),
+          qty: Number(r?.Qty) || 0,
+          modify_date: formatDate(r?.ModifyDate),
+        })),
+      };
+      const buffer = await this.weighingDispenseReportExcelService.generateReport(reportData);
+      const dateStr = new Date().toISOString().split('T')[0];
+      const filename = `weighing_dispense_report_${dateStr}.xlsx`;
+      return { buffer, filename };
+    } catch (error) {
+      console.error('[Report Service] Error generating Weighing Dispense Excel:', error);
+      const errorMessage = error?.message || error?.toString() || 'Unknown error';
+      throw new Error(`Failed to generate Weighing Dispense Excel report: ${errorMessage}`);
+    }
+  }
+
+  /**
+   * Generate Weighing Dispense Report (รายการเบิกตู้ Weighing) - PDF
+   */
+  async generateWeighingDispensePdf(params: {
+    stockId?: number;
+    itemcode?: string;
+    dateFrom?: string;
+    dateTo?: string;
+  }): Promise<{ buffer: Buffer; filename: string }> {
+    try {
+      const res = await this.weighingService.findDetailsBySign('-', {
+        page: 1,
+        limit: 10000,
+        itemcode: params?.itemcode?.trim() || undefined,
+        stockId: params?.stockId,
+        dateFrom: params?.dateFrom?.trim() || undefined,
+        dateTo: params?.dateTo?.trim() || undefined,
+      });
+      const rows = Array.isArray((res as any)?.data) ? (res as any).data : [];
+      const totalQty = rows.reduce((sum: number, r: any) => sum + (Number(r?.Qty) || 0), 0);
+      const formatDate = (d: string) => {
+        if (!d) return '-';
+        const date = new Date(d);
+        const y = date.getUTCFullYear();
+        const m = String(date.getUTCMonth() + 1).padStart(2, '0');
+        const day = String(date.getUTCDate()).padStart(2, '0');
+        const h = String(date.getUTCHours()).padStart(2, '0');
+        const min = String(date.getUTCMinutes()).padStart(2, '0');
+        const sec = String(date.getUTCSeconds()).padStart(2, '0');
+        return `${y}-${m}-${day} ${h}:${min}:${sec}`;
+      };
+      const employeeName = (r: any) => {
+        const emp = r?.userCabinet?.legacyUser?.employee;
+        if (!emp) return '-';
+        const parts = [emp.FirstName, emp.LastName].filter(Boolean);
+        return parts.length ? parts.join(' ') : '-';
+      };
+      const reportData: WeighingDispenseReportData = {
+        filters: { stockId: params?.stockId, itemcode: params?.itemcode, dateFrom: params?.dateFrom, dateTo: params?.dateTo },
+        summary: { total_rows: rows.length, total_qty: totalQty },
+        data: rows.map((r: any, i: number) => ({
+          seq: i + 1,
+          item_name: r?.item?.itemname || r?.item?.Alternatename || r?.itemcode || '-',
+          operator_name: employeeName(r),
+          qty: Number(r?.Qty) || 0,
+          modify_date: formatDate(r?.ModifyDate),
+        })),
+      };
+      const buffer = await this.weighingDispenseReportPdfService.generateReport(reportData);
+      const dateStr = new Date().toISOString().split('T')[0];
+      const filename = `weighing_dispense_report_${dateStr}.pdf`;
+      return { buffer, filename };
+    } catch (error) {
+      console.error('[Report Service] Error generating Weighing Dispense PDF:', error);
+      const errorMessage = error?.message || error?.toString() || 'Unknown error';
+      throw new Error(`Failed to generate Weighing Dispense PDF report: ${errorMessage}`);
+    }
+  }
+
+  /**
+   * Generate Weighing Refill Report (รายการเติมตู้ Weighing) - Excel
+   */
+  async generateWeighingRefillExcel(params: { stockId?: number; itemcode?: string; dateFrom?: string; dateTo?: string }): Promise<{ buffer: Buffer; filename: string }> {
+    try {
+      const res = await this.weighingService.findDetailsBySign('+', {
+        page: 1,
+        limit: 10000,
+        itemcode: params?.itemcode?.trim() || undefined,
+        stockId: params?.stockId,
+        dateFrom: params?.dateFrom?.trim() || undefined,
+        dateTo: params?.dateTo?.trim() || undefined,
+      });
+      const rows = Array.isArray((res as any)?.data) ? (res as any).data : [];
+      const totalQty = rows.reduce((sum: number, r: any) => sum + (Number(r?.Qty) || 0), 0);
+      const formatDate = (d: string) => {
+        if (!d) return '-';
+        const date = new Date(d);
+        const y = date.getUTCFullYear();
+        const m = String(date.getUTCMonth() + 1).padStart(2, '0');
+        const day = String(date.getUTCDate()).padStart(2, '0');
+        const h = String(date.getUTCHours()).padStart(2, '0');
+        const min = String(date.getUTCMinutes()).padStart(2, '0');
+        const sec = String(date.getUTCSeconds()).padStart(2, '0');
+        return `${y}-${m}-${day} ${h}:${min}:${sec}`;
+      };
+      const employeeName = (r: any) => {
+        const emp = r?.userCabinet?.legacyUser?.employee;
+        if (!emp) return '-';
+        const parts = [emp.FirstName, emp.LastName].filter(Boolean);
+        return parts.length ? parts.join(' ') : '-';
+      };
+      const reportData: WeighingDispenseReportData = {
+        filters: { stockId: params?.stockId, itemcode: params?.itemcode, dateFrom: params?.dateFrom, dateTo: params?.dateTo },
+        summary: { total_rows: rows.length, total_qty: totalQty },
+        data: rows.map((r: any, i: number) => ({
+          seq: i + 1,
+          item_name: r?.item?.itemname || r?.item?.Alternatename || r?.itemcode || '-',
+          operator_name: employeeName(r),
+          qty: Number(r?.Qty) || 0,
+          modify_date: formatDate(r?.ModifyDate),
+        })),
+      };
+      const buffer = await this.weighingRefillReportExcelService.generateReport(reportData);
+      const dateStr = new Date().toISOString().split('T')[0];
+      const filename = `weighing_refill_report_${dateStr}.xlsx`;
+      return { buffer, filename };
+    } catch (error) {
+      console.error('[Report Service] Error generating Weighing Refill Excel:', error);
+      const errorMessage = error?.message || error?.toString() || 'Unknown error';
+      throw new Error(`Failed to generate Weighing Refill Excel report: ${errorMessage}`);
+    }
+  }
+
+  /**
+   * Generate Weighing Refill Report (รายการเติมตู้ Weighing) - PDF
+   */
+  async generateWeighingRefillPdf(params: { stockId?: number; itemcode?: string; dateFrom?: string; dateTo?: string }): Promise<{ buffer: Buffer; filename: string }> {
+    try {
+      const res = await this.weighingService.findDetailsBySign('+', {
+        page: 1,
+        limit: 10000,
+        itemcode: params?.itemcode?.trim() || undefined,
+        stockId: params?.stockId,
+        dateFrom: params?.dateFrom?.trim() || undefined,
+        dateTo: params?.dateTo?.trim() || undefined,
+      });
+      const rows = Array.isArray((res as any)?.data) ? (res as any).data : [];
+      const totalQty = rows.reduce((sum: number, r: any) => sum + (Number(r?.Qty) || 0), 0);
+      const formatDate = (d: string) => {
+        if (!d) return '-';
+        const date = new Date(d);
+        const y = date.getUTCFullYear();
+        const m = String(date.getUTCMonth() + 1).padStart(2, '0');
+        const day = String(date.getUTCDate()).padStart(2, '0');
+        const h = String(date.getUTCHours()).padStart(2, '0');
+        const min = String(date.getUTCMinutes()).padStart(2, '0');
+        const sec = String(date.getUTCSeconds()).padStart(2, '0');
+        return `${y}-${m}-${day} ${h}:${min}:${sec}`;
+      };
+      const employeeName = (r: any) => {
+        const emp = r?.userCabinet?.legacyUser?.employee;
+        if (!emp) return '-';
+        const parts = [emp.FirstName, emp.LastName].filter(Boolean);
+        return parts.length ? parts.join(' ') : '-';
+      };
+      const reportData: WeighingDispenseReportData = {
+        filters: { stockId: params?.stockId, itemcode: params?.itemcode, dateFrom: params?.dateFrom, dateTo: params?.dateTo },
+        summary: { total_rows: rows.length, total_qty: totalQty },
+        data: rows.map((r: any, i: number) => ({
+          seq: i + 1,
+          item_name: r?.item?.itemname || r?.item?.Alternatename || r?.itemcode || '-',
+          operator_name: employeeName(r),
+          qty: Number(r?.Qty) || 0,
+          modify_date: formatDate(r?.ModifyDate),
+        })),
+      };
+      const buffer = await this.weighingRefillReportPdfService.generateReport(reportData);
+      const dateStr = new Date().toISOString().split('T')[0];
+      const filename = `weighing_refill_report_${dateStr}.pdf`;
+      return { buffer, filename };
+    } catch (error) {
+      console.error('[Report Service] Error generating Weighing Refill PDF:', error);
+      const errorMessage = error?.message || error?.toString() || 'Unknown error';
+      throw new Error(`Failed to generate Weighing Refill PDF report: ${errorMessage}`);
+    }
+  }
+
+  /**
+   * Generate Weighing Stock Report (รายการสต๊อกในตู้ Weighing) - Excel
+   */
+  async generateWeighingStockExcel(params: {
+    stockId?: number;
+    itemcode?: string;
+  }): Promise<{ buffer: Buffer; filename: string }> {
+    try {
+      const res = await this.weighingService.findAll({
+        page: 1,
+        limit: 10000,
+        itemcode: params?.itemcode?.trim() || undefined,
+        stockId: params?.stockId,
+      });
+      const rows = Array.isArray((res as any)?.data) ? (res as any).data : [];
+      const totalQty = rows.reduce((sum: number, r: any) => sum + (Number(r?.Qty) || 0), 0);
+      const cabinetName = (r: any) =>
+        r?.cabinet ? r.cabinet.cabinet_name || r.cabinet.cabinet_code || '-' : '-';
+      const reportData: WeighingStockReportData = {
+        filters: { stockId: params?.stockId, itemcode: params?.itemcode },
+        summary: { total_rows: rows.length, total_qty: totalQty },
+        data: rows.map((r: any, i: number) => ({
+          seq: i + 1,
+          item_name: r?.item?.itemname || r?.item?.Alternatename || r?.itemcode || '-',
+          cabinet_name: cabinetName(r),
+          slot_no: Number(r?.SlotNo) ?? 0,
+          sensor: Number(r?.Sensor) ?? 0,
+          qty: Number(r?.Qty) || 0,
+        })),
+      };
+      const buffer = await this.weighingStockReportExcelService.generateReport(reportData);
+      const dateStr = new Date().toISOString().split('T')[0];
+      const filename = `weighing_stock_report_${dateStr}.xlsx`;
+      return { buffer, filename };
+    } catch (error) {
+      console.error('[Report Service] Error generating Weighing Stock Excel:', error);
+      const errorMessage = error?.message || error?.toString() || 'Unknown error';
+      throw new Error(`Failed to generate Weighing Stock Excel report: ${errorMessage}`);
+    }
+  }
+
+  /**
+   * Generate Weighing Stock Report (รายการสต๊อกในตู้ Weighing) - PDF
+   */
+  async generateWeighingStockPdf(params: {
+    stockId?: number;
+    itemcode?: string;
+  }): Promise<{ buffer: Buffer; filename: string }> {
+    try {
+      const res = await this.weighingService.findAll({
+        page: 1,
+        limit: 10000,
+        itemcode: params?.itemcode?.trim() || undefined,
+        stockId: params?.stockId,
+      });
+      const rows = Array.isArray((res as any)?.data) ? (res as any).data : [];
+      const totalQty = rows.reduce((sum: number, r: any) => sum + (Number(r?.Qty) || 0), 0);
+      const cabinetName = (r: any) =>
+        r?.cabinet ? r.cabinet.cabinet_name || r.cabinet.cabinet_code || '-' : '-';
+      const reportData: WeighingStockReportData = {
+        filters: { stockId: params?.stockId, itemcode: params?.itemcode },
+        summary: { total_rows: rows.length, total_qty: totalQty },
+        data: rows.map((r: any, i: number) => ({
+          seq: i + 1,
+          item_name: r?.item?.itemname || r?.item?.Alternatename || r?.itemcode || '-',
+          cabinet_name: cabinetName(r),
+          slot_no: Number(r?.SlotNo) ?? 0,
+          sensor: Number(r?.Sensor) ?? 0,
+          qty: Number(r?.Qty) || 0,
+        })),
+      };
+      const buffer = await this.weighingStockReportPdfService.generateReport(reportData);
+      const dateStr = new Date().toISOString().split('T')[0];
+      const filename = `weighing_stock_report_${dateStr}.pdf`;
+      return { buffer, filename };
+    } catch (error) {
+      console.error('[Report Service] Error generating Weighing Stock PDF:', error);
+      const errorMessage = error?.message || error?.toString() || 'Unknown error';
+      throw new Error(`Failed to generate Weighing Stock PDF report: ${errorMessage}`);
+    }
+  }
+
+  /**
+   * Get Dispensed Items for Patients Report Data
    * ดึงข้อมูลจาก medical supply usage ที่มี supply_items และเชื่อมโยงกับ dispensed items
    */
   async getDispensedItemsForPatientsData(params: {
