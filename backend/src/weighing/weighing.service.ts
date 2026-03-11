@@ -8,27 +8,43 @@ export class WeighingService {
   /**
    * ดึงรายการ ItemSlotInCabinet แบบแบ่งหน้า (รวม relation cabinet)
    * itemName: ค้นหาจากชื่ออุปกรณ์ (itemname / Alternatename)
+   * ไม่แสดงรายการที่ชื่อสินค้าเป็น '-' หรือตู้ 0
    */
   async findAll(params: { page?: number; limit?: number; itemcode?: string; itemName?: string; stockId?: number }) {
     const page = params.page ?? 1;
     const limit = Math.min(params.limit ?? 50, 10000);
     const skip = (page - 1) * limit;
 
-    const where: { itemcode?: { contains: string }; item?: object; StockID?: number } = {};
+    const hasItemNameFilter = {
+      itemname: { not: null },
+      NOT: { OR: [{ itemname: '' }, { itemname: '-' }] },
+    };
+    const notCabinetZeroFilter = {
+      OR: [
+        { cabinet: null },
+        { cabinet: { cabinet_code: { not: '0' }, cabinet_name: { not: 'ตู้ 0' } } },
+      ],
+    };
+
+    const baseWhere: { itemcode?: { contains: string }; item?: object; StockID?: number } = {};
     if (params.itemName?.trim()) {
       const k = params.itemName.trim();
-      where.item = {
-        OR: [
-          { itemname: { contains: k } },
-          { Alternatename: { contains: k } },
+      baseWhere.item = {
+        AND: [
+          hasItemNameFilter,
+          { OR: [{ itemname: { contains: k } }, { Alternatename: { contains: k } }] },
         ],
       };
     } else if (params.itemcode?.trim()) {
-      where.itemcode = { contains: params.itemcode.trim() };
+      baseWhere.itemcode = { contains: params.itemcode.trim() };
+      baseWhere.item = hasItemNameFilter;
+    } else {
+      baseWhere.item = hasItemNameFilter;
     }
     if (params.stockId != null && params.stockId > 0) {
-      where.StockID = params.stockId;
+      baseWhere.StockID = params.stockId;
     }
+    const where = { AND: [baseWhere, notCabinetZeroFilter] };
 
     const [items, total] = await Promise.all([
       this.prisma.itemSlotInCabinet.findMany({
@@ -141,7 +157,7 @@ export class WeighingService {
    * ดึงรายการ ItemSlotInCabinetDetail แบบแบ่งหน้า ตาม Sign (เบิก = '-', เติม = '+')
    * dateFrom/dateTo: YYYY-MM-DD, กรองตาม ModifyDate (ต้นวัน - ปลายวัน UTC)
    * itemName: ค้นหาจากชื่ออุปกรณ์ (itemname / Alternatename)
-   * แสดงเฉพาะรายการที่ item มี itemname (ไม่ null และไม่ว่าง)
+   * แสดงเฉพาะรายการที่ item มี itemname (ไม่ null, ไม่ว่าง, ไม่ใช่ '-') และไม่แสดงตู้ 0
    */
   async findDetailsBySign(
     sign: string,
@@ -159,16 +175,30 @@ export class WeighingService {
     const limit = Math.min(params.limit ?? 50, 10000);
     const skip = (page - 1) * limit;
 
-    // กรองเฉพาะ item ที่มี itemname (ไม่ null และไม่ว่าง)
+    // กรองเฉพาะ item ที่มี itemname (ไม่ null, ไม่ว่าง, ไม่ใช่ '-')
     const hasItemNameFilter = {
       itemname: { not: null },
-      NOT: { itemname: '' },
+      NOT: { OR: [{ itemname: '' }, { itemname: '-' }] },
+    };
+
+    // ไม่แสดงตู้ 0 (cabinet_code = '0' หรือ cabinet_name = 'ตู้ 0')
+    const notCabinetZeroFilter = {
+      OR: [
+        { cabinet: null },
+        {
+          cabinet: {
+            cabinet_code: { not: '0' },
+            cabinet_name: { not: 'ตู้ 0' },
+          },
+        },
+      ],
     };
 
     const where: {
       Sign: string;
       itemcode?: { contains: string };
       item?: object;
+      itemSlotInCabinet?: object;
       StockID?: number;
       ModifyDate?: { gte?: Date; lte?: Date };
     } = {
@@ -193,6 +223,8 @@ export class WeighingService {
     } else {
       where.item = hasItemNameFilter;
     }
+    // ไม่แสดงตู้ 0
+    where.itemSlotInCabinet = notCabinetZeroFilter;
     if (params.stockId != null && params.stockId > 0) {
       where.StockID = params.stockId;
     }
@@ -254,6 +286,7 @@ export class WeighingService {
 
   /**
    * ดึงรายการตู้ (cabinet) ที่มีสต๊อกในตู้ Weighing (มีอย่างน้อย 1 แถวใน ItemSlotInCabinet)
+   * ไม่รวมตู้ 0 (cabinet_code = '0' หรือ cabinet_name = 'ตู้ 0')
    */
   async findCabinetsWithWeighingStock() {
     const stockIds = await this.prisma.itemSlotInCabinet.findMany({
@@ -265,7 +298,15 @@ export class WeighingService {
       return { success: true, data: [] };
     }
     const cabinets = await this.prisma.cabinet.findMany({
-      where: { stock_id: { in: ids } },
+      where: {
+        stock_id: { in: ids },
+        NOT: {
+          OR: [
+            { cabinet_code: '0' },
+            { cabinet_name: 'ตู้ 0' },
+          ],
+        },
+      },
       select: { id: true, cabinet_name: true, cabinet_code: true, cabinet_status: true, stock_id: true },
       orderBy: { cabinet_name: 'asc' },
     });
