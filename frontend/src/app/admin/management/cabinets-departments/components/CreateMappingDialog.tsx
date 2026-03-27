@@ -14,7 +14,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Loader2 } from "lucide-react";
 import SearchableSelect from "@/app/admin/cabinet-departments/components/SearchableSelect";
-import { weighingApi, departmentApi } from "@/lib/api";
+import { cabinetApi, departmentApi } from "@/lib/api";
 
 interface Department {
   ID: number;
@@ -62,6 +62,7 @@ export default function CreateMappingDialog({
   useEffect(() => {
     if (open) {
       setFormData({ ...formData, status: "ACTIVE" });
+      loadCabinets();
     }
   }, [open]);
 
@@ -82,21 +83,23 @@ export default function CreateMappingDialog({
   const loadCabinets = async (keyword?: string) => {
     try {
       setLoadingCabinets(true);
-      const response = await weighingApi.getCabinets();
-      if (response.success && response.data) {
-        let list = response.data as Cabinet[];
-        if (keyword?.trim()) {
-          const k = keyword.trim().toLowerCase();
-          list = list.filter(
-            (c) =>
-              (c.cabinet_name || "").toLowerCase().includes(k) ||
-              (c.cabinet_code || "").toLowerCase().includes(k)
-          );
-        }
-        setCabinets(list);
+      const params: { page: number; limit: number; keyword?: string } = {
+        page: 1,
+        limit: 500,
+      };
+      if (keyword?.trim()) params.keyword = keyword.trim();
+      const response = (await cabinetApi.getAll(params)) as {
+        success?: boolean;
+        data?: Cabinet[];
+      };
+      if (response?.success !== false && Array.isArray(response?.data)) {
+        setCabinets(response.data);
+      } else {
+        setCabinets([]);
       }
     } catch (error) {
-      console.error("Failed to load weighing cabinets:", error);
+      console.error("Failed to load cabinets:", error);
+      setCabinets([]);
     } finally {
       setLoadingCabinets(false);
     }
@@ -108,11 +111,11 @@ export default function CreateMappingDialog({
         <div ref={dropdownSlotRef} className="relative flex flex-col flex-1 min-h-0">
           <DialogHeader className="shrink-0">
             <DialogTitle>เพิ่มการเชื่อมโยงใหม่</DialogTitle>
-            <DialogDescription>เชื่อมโยงตู้ Weighing กับแผนก</DialogDescription>
+            <DialogDescription>เชื่อมโยงตู้กับแผนก (ทุกตู้ในระบบ)</DialogDescription>
           </DialogHeader>
           <div className="grid gap-4 py-4 overflow-y-auto flex-1 pr-1">
             <SearchableSelect
-              label="ตู้ Weighing"
+              label="ตู้"
               portalTargetRef={dropdownSlotRef}
               placeholder="เลือกตู้"
               value={formData.cabinet_id}

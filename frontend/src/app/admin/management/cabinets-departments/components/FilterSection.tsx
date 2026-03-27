@@ -12,7 +12,7 @@ import {
 } from "@/components/ui/select";
 import { Filter } from "lucide-react";
 import SearchableSelect from "@/app/admin/cabinet-departments/components/SearchableSelect";
-import { weighingApi, departmentApi, cabinetDepartmentApi } from "@/lib/api";
+import { cabinetApi, departmentApi } from "@/lib/api";
 import { cn } from "@/lib/utils";
 
 interface Department {
@@ -25,13 +25,6 @@ interface Cabinet {
   id: number;
   cabinet_name?: string;
   cabinet_code?: string;
-}
-
-interface CabinetDepartmentMapping {
-  id: number;
-  cabinet_id: number;
-  department_id: number;
-  cabinet?: { id: number; cabinet_name?: string; cabinet_code?: string };
 }
 
 interface FilterSectionProps {
@@ -65,64 +58,28 @@ export default function FilterSection({ onSearch, onBeforeSearch }: FilterSectio
     }
   };
 
-  const loadCabinetsByDepartment = async (departmentId: string, keyword?: string) => {
-    if (!departmentId || departmentId === "") {
-      loadWeighingCabinets(keyword);
-      return;
-    }
-
+  /** รายการตู้จาก master เหมือนหน้า admin/management/cabinets (GET /cabinets) */
+  const loadManagementCabinets = async (keyword?: string) => {
     try {
       setLoadingCabinets(true);
-      const response = await cabinetDepartmentApi.getAll({
-        departmentId: parseInt(departmentId),
-        keyword: keyword,
-        onlyWeighingCabinets: true,
-      });
+      const params: { page: number; limit: number; keyword?: string } = {
+        page: 1,
+        limit: 500,
+      };
+      if (keyword?.trim()) params.keyword = keyword.trim();
 
-      if (response.success && response.data) {
-        const mappings = response.data as CabinetDepartmentMapping[];
-        const uniqueCabinets = new Map<number, Cabinet>();
-        mappings.forEach((mapping) => {
-          if (mapping.cabinet && !uniqueCabinets.has(mapping.cabinet.id)) {
-            uniqueCabinets.set(mapping.cabinet.id, {
-              id: mapping.cabinet.id,
-              cabinet_name: mapping.cabinet.cabinet_name,
-              cabinet_code: mapping.cabinet.cabinet_code,
-            });
-          }
-        });
-        setCabinets(Array.from(uniqueCabinets.values()));
+      const response = (await cabinetApi.getAll(params)) as {
+        success?: boolean;
+        data?: Cabinet[];
+      };
+
+      if (response?.success !== false && Array.isArray(response?.data)) {
+        setCabinets(response.data);
       } else {
         setCabinets([]);
       }
     } catch (error) {
-      console.error("Failed to load cabinets by department:", error);
-      setCabinets([]);
-    } finally {
-      setLoadingCabinets(false);
-    }
-  };
-
-  const loadWeighingCabinets = async (keyword?: string) => {
-    try {
-      setLoadingCabinets(true);
-      const response = await weighingApi.getCabinets();
-      if (response.success && response.data) {
-        let list = response.data as Cabinet[];
-        if (keyword?.trim()) {
-          const k = keyword.trim().toLowerCase();
-          list = list.filter(
-            (c) =>
-              (c.cabinet_name || "").toLowerCase().includes(k) ||
-              (c.cabinet_code || "").toLowerCase().includes(k)
-          );
-        }
-        setCabinets(list);
-      } else {
-        setCabinets([]);
-      }
-    } catch (error) {
-      console.error("Failed to load weighing cabinets:", error);
+      console.error("Failed to load cabinets:", error);
       setCabinets([]);
     } finally {
       setLoadingCabinets(false);
@@ -130,8 +87,8 @@ export default function FilterSection({ onSearch, onBeforeSearch }: FilterSectio
   };
 
   useEffect(() => {
-    loadCabinetsByDepartment(formFilters.departmentId);
-  }, [formFilters.departmentId]);
+    loadManagementCabinets();
+  }, []);
 
   const handleApply = () => {
     onBeforeSearch?.();
@@ -189,10 +146,8 @@ export default function FilterSection({ onSearch, onBeforeSearch }: FilterSectio
           />
 
           <SearchableSelect
-            label="ตู้ Weighing"
-            placeholder={
-              formFilters.departmentId ? "เลือกตู้ Weighing" : "ทั้งหมด (เลือกแผนกเพื่อกรอง)"
-            }
+            label="ตู้"
+            placeholder="เลือกตู้หรือค้นหาชื่อ/รหัส"
             value={formFilters.cabinetId}
             onValueChange={(value) => setFormFilters({ ...formFilters, cabinetId: value })}
             options={[
@@ -204,14 +159,8 @@ export default function FilterSection({ onSearch, onBeforeSearch }: FilterSectio
               })),
             ]}
             loading={loadingCabinets}
-            onSearch={(searchKeyword) => {
-              if (formFilters.departmentId) {
-                loadCabinetsByDepartment(formFilters.departmentId, searchKeyword);
-              } else {
-                loadWeighingCabinets(searchKeyword);
-              }
-            }}
-            searchPlaceholder="ค้นหารหัสหรือชื่อตู้..."
+            onSearch={(searchKeyword) => loadManagementCabinets(searchKeyword)}
+            searchPlaceholder="ค้นหารหัสหรือชื่อตู้ (เหมือนหน้าจัดการตู้)..."
           />
 
           <div className="space-y-2">

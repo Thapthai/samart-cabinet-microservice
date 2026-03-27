@@ -65,7 +65,7 @@ export default function ManagementCabinetDepartmentsPage() {
   const loadData = async () => {
     try {
       setLoading(true);
-      const mappingsRes = await cabinetDepartmentApi.getAll({ onlyWeighingCabinets: true });
+      const mappingsRes = await cabinetDepartmentApi.getAll({});
 
       if (mappingsRes.success && mappingsRes.data) {
         setMappings(mappingsRes.data as ManagementCabinetDepartment[]);
@@ -240,10 +240,10 @@ export default function ManagementCabinetDepartmentsPage() {
               </div>
               <div>
                 <h1 className="text-2xl font-bold tracking-tight text-gray-900">
-                  จัดการตู้ Weighing - แผนก
+                  จัดการตู้ - แผนก
                 </h1>
                 <p className="mt-0.5 text-sm text-gray-500">
-                  จัดการตู้ Weighing และเชื่อมโยงกับแผนก
+                  จัดการตู้เพื่อเชื่อมโยงกับแผนก
                 </p>
               </div>
             </div>

@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Edit, Trash2, ChevronDown, ChevronRight, Loader2, Package } from "lucide-react";
-import { weighingApi } from "@/lib/api";
+import { cabinetDepartmentApi } from "@/lib/api";
 import { toast } from "sonner";
 
 interface CabinetDepartment {
@@ -30,14 +30,24 @@ interface CabinetDepartment {
   };
 }
 
-interface WeighingSlot {
+/** แถวจาก GET /cabinet-departments?cabinet_id= */
+interface CabinetDepartmentLink {
   id: number;
-  itemcode: string;
-  StockID: number;
-  SlotNo: number;
-  Sensor: number;
-  Qty: number;
-  item?: { itemname?: string | null; Alternatename?: string | null } | null;
+  cabinet_id: number;
+  department_id: number;
+  status: string;
+  description?: string | null;
+  weighing_slot_count?: number;
+  weighing_dispense_count?: number;
+  weighing_refill_count?: number;
+  department?: { ID: number; DepName?: string; DepName2?: string };
+  cabinet?: {
+    id: number;
+    cabinet_name?: string | null;
+    cabinet_code?: string | null;
+    stock_id?: number | null;
+    cabinet_status?: string | null;
+  };
 }
 
 interface MappingTableProps {
@@ -50,25 +60,21 @@ export default function MappingTable({ mappings, onEdit, onDelete }: MappingTabl
   const [currentPage, setCurrentPage] = useState(1);
   const [selectedRow, setSelectedRow] = useState<CabinetDepartment | null>(null);
   const [expandedDropdown, setExpandedDropdown] = useState<number | null>(null);
-  const [weighingSlots, setWeighingSlots] = useState<{ [key: number]: WeighingSlot[] }>({});
-  const [loadingSlots, setLoadingSlots] = useState<number | null>(null);
-  const [dropdownPage, setDropdownPage] = useState<{ [key: number]: number }>({});
+  /** แคชรายการเชื่อมโยง cabinet_departments ต่อ cabinet_id — undefined = ยังไม่โหลด */
+  const [linksByCabinetId, setLinksByCabinetId] = useState<{
+    [cabinetId: number]: CabinetDepartmentLink[] | null | undefined;
+  }>({});
+  const [loadingCabinetId, setLoadingCabinetId] = useState<number | null>(null);
   const itemsPerPage = 5;
-  const itemsPerDropdown = 10;
 
   const totalPages = Math.ceil(mappings.length / itemsPerPage);
   const startIndex = (currentPage - 1) * itemsPerPage;
   const endIndex = startIndex + itemsPerPage;
   const currentMappings = mappings.slice(startIndex, endIndex);
 
-  /** สล็อต 1 = ใน, 2 = นอก */
-  const formatSlotDisplay = (value: number | null | undefined) =>
-    value === 1 ? "ใน" : value === 2 ? "นอก" : value != null ? String(value) : "-";
-
   const handleDropdownToggle = async (e: React.MouseEvent, mapping: CabinetDepartment) => {
     e.stopPropagation();
     const cabinetId = mapping.cabinet_id;
-    const stockId = mapping.cabinet?.stock_id;
 
     if (expandedDropdown === mapping.id) {
       setExpandedDropdown(null);
@@ -77,33 +83,29 @@ export default function MappingTable({ mappings, onEdit, onDelete }: MappingTabl
 
     setExpandedDropdown(mapping.id);
 
-    if (weighingSlots[cabinetId] || !stockId) {
-      if (!stockId) {
-        setWeighingSlots((prev) => ({ ...prev, [cabinetId]: [] }));
-      }
+    if (linksByCabinetId[cabinetId] !== undefined) {
       return;
     }
 
     try {
-      setLoadingSlots(cabinetId);
-      const res = await weighingApi.getAll({
-        stockId,
-        page: 1,
-        limit: 1000,
-      });
+      setLoadingCabinetId(cabinetId);
+      const res = await cabinetDepartmentApi.getAll({ cabinetId });
 
       if (res?.success && Array.isArray(res.data)) {
-        setWeighingSlots((prev) => ({ ...prev, [cabinetId]: res.data }));
-        setDropdownPage((prev) => ({ ...prev, [cabinetId]: 1 }));
+        setLinksByCabinetId((prev) => ({
+          ...prev,
+          [cabinetId]: res.data as CabinetDepartmentLink[],
+        }));
       } else {
-        setWeighingSlots((prev) => ({ ...prev, [cabinetId]: [] }));
+        setLinksByCabinetId((prev) => ({ ...prev, [cabinetId]: null }));
       }
-    } catch (error: any) {
-      console.error("Error loading weighing slots:", error);
-      toast.error(error.message || "โหลดสต๊อก Weighing ไม่สำเร็จ");
-      setWeighingSlots((prev) => ({ ...prev, [cabinetId]: [] }));
+    } catch (error: unknown) {
+      console.error("Error loading cabinet-departments:", error);
+      const msg = error instanceof Error ? error.message : "โหลดการเชื่อมโยงไม่สำเร็จ";
+      toast.error(msg);
+      setLinksByCabinetId((prev) => ({ ...prev, [cabinetId]: null }));
     } finally {
-      setLoadingSlots(null);
+      setLoadingCabinetId(null);
     }
   };
 
@@ -111,70 +113,81 @@ export default function MappingTable({ mappings, onEdit, onDelete }: MappingTabl
     setSelectedRow(mapping);
   };
 
-  const handleLoadMore = (cabinetId: number) => {
-    setDropdownPage((prev) => ({
-      ...prev,
-      [cabinetId]: (prev[cabinetId] || 1) + 1,
-    }));
-  };
+  const renderCabinetDepartmentLinks = (cabinetId: number, highlightMappingId: number) => {
+    const links = linksByCabinetId[cabinetId];
+    if (!links || links.length === 0) return null;
 
-  const renderWeighingSlots = (cabinetId: number, mappingId: number) => {
-    const slots = weighingSlots[cabinetId];
-    if (!slots || slots.length === 0) return null;
-
-    const page = dropdownPage[cabinetId] || 1;
-    const displayed = slots.slice(0, page * itemsPerDropdown);
+    const firstCab = links[0]?.cabinet;
 
     return (
       <div>
         <h4 className="font-semibold mb-3 text-gray-700 flex items-center gap-2">
           <Package className="h-4 w-4" />
-          สต๊อกในตู้ Weighing ({slots.length} รายการ)
+          การเชื่อมโยงตู้–แผนกของตู้นี้ — {links.length} รายการ
         </h4>
+        {(firstCab?.cabinet_name || firstCab?.cabinet_code) && (
+          <p className="text-sm text-muted-foreground mb-3">
+            ตู้:{" "}
+            <span className="font-medium text-foreground">
+              {firstCab?.cabinet_name || "—"}{" "}
+              {firstCab?.cabinet_code ? `(${firstCab.cabinet_code})` : ""}
+            </span>
+            {firstCab?.stock_id != null && (
+              <span className="ml-2 tabular-nums">· Stock ID {firstCab.stock_id}</span>
+            )}
+          </p>
+        )}
         <div className="space-y-2">
-          {displayed.map((row, idx) => (
+          {links.map((row) => (
             <div
-              key={`mapping-${mappingId}-slot-${row.id}-${idx}`}
-              className="border rounded-lg p-3 bg-white hover:shadow-sm transition-shadow"
+              key={row.id}
+              className={`rounded-lg border p-3 text-sm bg-white ${
+                row.id === highlightMappingId
+                  ? "border-blue-300 ring-1 ring-blue-200"
+                  : "border-slate-200"
+              }`}
             >
-              <div className="grid grid-cols-2 md:grid-cols-[auto_1fr_1fr_1fr_1fr_1fr] gap-2 md:gap-4 text-sm">
-                <div className="w-fit md:min-w-[60px]">
-                  <span className="text-gray-500">ลำดับ:</span>
-                  <span className="ml-1 font-medium">{idx + 1}</span>
+              <div className="flex flex-wrap items-start justify-between gap-2">
+                <div>
+                  <span className="text-gray-500">แผนก</span>
+                  <p className="font-medium">{row.department?.DepName || "—"}</p>
+                  {row.department?.DepName2 && (
+                    <p className="text-xs text-muted-foreground">{row.department.DepName2}</p>
+                  )}
                 </div>
-                <div className="w-fit md:min-w-[120px]">
-                  <span className="text-gray-500">รหัส:</span>
-                  <span className="ml-2 font-medium font-mono">{row.itemcode}</span>
-                </div>
-                <div className="w-fit md:min-w-[500px]">
-                  <span className="text-gray-500">ชื่อสินค้า:</span>
-                  <span className="ml-2 font-medium">
-                    {row.item?.itemname || row.item?.Alternatename || "-"}
-                  </span>
+                <Badge
+                  variant={row.status === "ACTIVE" ? "default" : "secondary"}
+                  className={
+                    row.status === "ACTIVE"
+                      ? "bg-emerald-100 text-emerald-800 border-emerald-200 shrink-0"
+                      : "shrink-0"
+                  }
+                >
+                  {row.status === "ACTIVE" ? "ใช้งาน" : "ไม่ใช้งาน"}
+                </Badge>
+              </div>
+              <div className="mt-2 grid grid-cols-2 sm:grid-cols-4 gap-2 text-xs text-gray-600">
+                <div>
+                  <span className="text-gray-500">ช่องสต๊อกในตู้</span>
+                  <p className="font-medium tabular-nums">{row.weighing_slot_count ?? 0}</p>
                 </div>
                 <div>
-                  <span className="text-gray-500">ช่อง:</span>
-                  <span className="ml-2 font-medium">{row.SlotNo}</span>
+                  <span className="text-gray-500">เบิก / เติม (รายการ)</span>
+                  <p className="font-medium tabular-nums">
+                    {row.weighing_dispense_count ?? 0} / {row.weighing_refill_count ?? 0}
+                  </p>
                 </div>
-                <div>
-                  <span className="text-gray-500">สล็อต:</span>
-                  <span className="ml-2 font-medium">{formatSlotDisplay(row.Sensor)}</span>
-                </div>
-                <div>
-                  <span className="text-gray-500">จำนวน:</span>
-                  <span className="ml-2 font-medium tabular-nums">{row.Qty}</span>
+                <div className="col-span-2 sm:col-span-2">
+                  <span className="text-gray-500">หมายเหตุ</span>
+                  <p className="font-medium">{row.description?.trim() || "—"}</p>
                 </div>
               </div>
+              <p className="mt-2 text-[11px] text-muted-foreground tabular-nums">
+                mapping id #{row.id} · แผนก ID {row.department_id}
+              </p>
             </div>
           ))}
         </div>
-        {slots.length > page * itemsPerDropdown && (
-          <div className="mt-4 text-center">
-            <Button variant="outline" size="sm" onClick={() => handleLoadMore(cabinetId)}>
-              ดูเพิ่มเติม ({slots.length - page * itemsPerDropdown} รายการ)
-            </Button>
-          </div>
-        )}
       </div>
     );
   };
@@ -185,7 +198,7 @@ export default function MappingTable({ mappings, onEdit, onDelete }: MappingTabl
         <CardHeader className="border-b border-slate-100 bg-slate-50/50">
           <CardTitle className="text-lg text-slate-800 flex items-center gap-2">
             <Package className="h-5 w-5 text-blue-600" />
-            รายการเชื่อมโยง ({mappings.length})
+            รายการเชื่อมโยงตู้–แผนกทั้งหมด ({mappings.length})
           </CardTitle>
         </CardHeader>
         <CardContent className="p-0">
@@ -197,7 +210,7 @@ export default function MappingTable({ mappings, onEdit, onDelete }: MappingTabl
                   <TableHead className="text-slate-600 font-semibold">ลำดับ</TableHead>
                   <TableHead className="text-slate-600 font-semibold">ชื่อตู้</TableHead>
                   <TableHead className="text-slate-600 font-semibold">แผนก</TableHead>
-                  <TableHead className="text-center text-slate-600 font-semibold">จำนวนสต๊อก Weighing</TableHead>
+                  <TableHead className="text-center text-slate-600 font-semibold">ช่องสต๊อก / เบิก·เติม</TableHead>
                   <TableHead className="text-slate-600 font-semibold">สถานะ</TableHead>
                   <TableHead className="text-slate-600 font-semibold">หมายเหตุ</TableHead>
                   <TableHead className="text-right text-slate-600 font-semibold">จัดการ</TableHead>
@@ -233,8 +246,11 @@ export default function MappingTable({ mappings, onEdit, onDelete }: MappingTabl
                         <TableCell className="text-center tabular-nums">{startIndex + index + 1}</TableCell>
                         <TableCell className="font-medium">{mapping.cabinet?.cabinet_name || "-"}</TableCell>
                         <TableCell className="text-gray-700">{mapping.department?.DepName || "-"}</TableCell>
-                        <TableCell className="text-center">
-                          <span className="font-medium text-slate-700">
+                        <TableCell className="text-center text-sm">
+                          <span className="font-medium text-slate-700 tabular-nums block">
+                            ช่อง {mapping.weighing_slot_count ?? 0}
+                          </span>
+                          <span className="text-muted-foreground tabular-nums text-xs">
                             เบิก {mapping.weighing_dispense_count ?? 0} / เติม {mapping.weighing_refill_count ?? 0}
                           </span>
                         </TableCell>
@@ -268,20 +284,16 @@ export default function MappingTable({ mappings, onEdit, onDelete }: MappingTabl
                       {expandedDropdown === mapping.id && (
                         <TableRow>
                           <TableCell colSpan={8} className="bg-gray-50 p-4">
-                            {loadingSlots === mapping.cabinet_id ? (
+                            {loadingCabinetId === mapping.cabinet_id ? (
                               <div className="flex items-center justify-center py-4">
                                 <Loader2 className="h-6 w-6 animate-spin text-blue-600" />
-                                <span className="ml-2 text-gray-600">กำลังโหลดสต๊อก Weighing...</span>
+                                <span className="ml-2 text-gray-600">กำลังโหลด cabinet_departments...</span>
                               </div>
-                            ) : weighingSlots[mapping.cabinet_id]?.length > 0 ? (
-                              renderWeighingSlots(mapping.cabinet_id, mapping.id)
-                            ) : weighingSlots[mapping.cabinet_id] && weighingSlots[mapping.cabinet_id].length === 0 ? (
+                            ) : linksByCabinetId[mapping.cabinet_id]?.length ? (
+                              renderCabinetDepartmentLinks(mapping.cabinet_id, mapping.id)
+                            ) : linksByCabinetId[mapping.cabinet_id] !== undefined ? (
                               <div className="text-center py-4 text-gray-500">
-                                ไม่พบสต๊อก Weighing ในตู้นี้
-                              </div>
-                            ) : !mapping.cabinet?.stock_id ? (
-                              <div className="text-center py-4 text-gray-500">
-                                ตู้นี้ไม่มี stock_id
+                                ไม่พบการเชื่อมโยงเพิ่มเติมสำหรับตู้นี้
                               </div>
                             ) : null}
                           </TableCell>

@@ -6,21 +6,14 @@ import { weighingApi, cabinetApi, reportsApi } from '@/lib/api';
 import ProtectedRoute from '@/components/ProtectedRoute';
 import AppLayout from '@/components/AppLayout';
 import { toast } from 'sonner';
-import { Package, Search, X, Download, Settings2 } from 'lucide-react';
+import { Package, Download, Settings2 } from 'lucide-react';
 import type { Item } from '@/types/item';
 import UpdateMinMaxDialog from '../items/components/UpdateMinMaxDialog';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
 import Pagination from '@/components/Pagination';
+import WeighingStockFilterSection from './components/WeighingStockFilterSection';
 
 export interface ItemSlotInCabinetRow {
   id: number;
@@ -55,8 +48,12 @@ export default function WeighingPage() {
   const [cabinets, setCabinets] = useState<CabinetOption[]>([]);
   const [loading, setLoading] = useState(true);
   const [loadingCabinets, setLoadingCabinets] = useState(true);
-  const [itemcodeFilter, setItemcodeFilter] = useState('');
-  const [searchTerm, setSearchTerm] = useState('');
+  /** ค่าที่ส่ง API หลังกดค้นหา — ชื่ออุปกรณ์ (itemName) */
+  const [appliedItemName, setAppliedItemName] = useState('');
+  const [itemNameDraft, setItemNameDraft] = useState('');
+  /** รหัสสินค้า — ใช้เมื่อไม่กรอกชื่อ (ตรงกับ backend) */
+  const [appliedItemcode, setAppliedItemcode] = useState('');
+  const [itemcodeDraft, setItemcodeDraft] = useState('');
   const [stockIdFilter, setStockIdFilter] = useState<string>('');
   const [selectedStockId, setSelectedStockId] = useState<string>('');
   const [currentPage, setCurrentPage] = useState(1);
@@ -75,7 +72,7 @@ export default function WeighingPage() {
 
   useEffect(() => {
     if (user?.id) fetchList();
-  }, [user?.id, currentPage, itemcodeFilter, stockIdFilter]);
+  }, [user?.id, currentPage, appliedItemName, appliedItemcode, stockIdFilter]);
 
   const fetchCabinets = async () => {
     try {
@@ -97,7 +94,9 @@ export default function WeighingPage() {
       const res = await weighingApi.getAll({
         page: currentPage,
         limit: itemsPerPage,
-        itemName: itemcodeFilter || undefined,
+        itemName: appliedItemName.trim() || undefined,
+        itemcode:
+          appliedItemName.trim() ? undefined : appliedItemcode.trim() || undefined,
         stockId: stockIdFilter ? parseInt(stockIdFilter, 10) : undefined,
       });
       if (res?.success && Array.isArray(res.data)) {
@@ -119,14 +118,17 @@ export default function WeighingPage() {
   };
 
   const handleSearch = () => {
-    setItemcodeFilter(searchTerm.trim());
+    setAppliedItemName(itemNameDraft.trim());
+    setAppliedItemcode(itemNameDraft.trim() ? '' : itemcodeDraft.trim());
     setStockIdFilter(selectedStockId);
     setCurrentPage(1);
   };
 
   const handleClear = () => {
-    setSearchTerm('');
-    setItemcodeFilter('');
+    setItemNameDraft('');
+    setItemcodeDraft('');
+    setAppliedItemName('');
+    setAppliedItemcode('');
     setStockIdFilter('');
     setSelectedStockId('');
     setCurrentPage(1);
@@ -137,7 +139,8 @@ export default function WeighingPage() {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
-  const hasActiveFilters = itemcodeFilter || stockIdFilter;
+  const hasActiveFilters =
+    !!appliedItemName || !!appliedItemcode || !!stockIdFilter;
 
   const formatMinMax = (v: number | null | undefined) =>
     v != null && v !== undefined ? String(v) : '—';
@@ -173,8 +176,10 @@ export default function WeighingPage() {
     try {
       setExportLoading('excel');
       const stockId = stockIdFilter ? parseInt(stockIdFilter, 10) : undefined;
-      const itemName = itemcodeFilter || undefined;
-      await reportsApi.downloadWeighingStockExcel({ stockId, itemName });
+      const itemName = appliedItemName.trim() || undefined;
+      const itemcode =
+        appliedItemName.trim() ? undefined : appliedItemcode.trim() || undefined;
+      await reportsApi.downloadWeighingStockExcel({ stockId, itemName, itemcode });
       toast.success('ดาวน์โหลดรายงาน Excel สำเร็จ');
     } catch (e) {
       console.error(e);
@@ -188,8 +193,10 @@ export default function WeighingPage() {
     try {
       setExportLoading('pdf');
       const stockId = stockIdFilter ? parseInt(stockIdFilter, 10) : undefined;
-      const itemName = itemcodeFilter || undefined;
-      await reportsApi.downloadWeighingStockPdf({ stockId, itemName });
+      const itemName = appliedItemName.trim() || undefined;
+      const itemcode =
+        appliedItemName.trim() ? undefined : appliedItemcode.trim() || undefined;
+      await reportsApi.downloadWeighingStockPdf({ stockId, itemName, itemcode });
       toast.success('ดาวน์โหลดรายงาน PDF สำเร็จ');
     } catch (e) {
       console.error(e);
@@ -237,61 +244,28 @@ export default function WeighingPage() {
             </div>
           </div>
 
-          <Card className="border-blue-100/80 bg-gradient-to-br from-slate-50 to-blue-50/40 shadow-sm overflow-hidden">
-            <CardContent className="pt-6 pb-6">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 items-end">
-                <div className="space-y-1.5">
-                  <label className="text-sm font-medium text-gray-700">
-                    ชื่ออุปกรณ์
-                  </label>
-                  <Input
-                    placeholder="พิมพ์ชื่ออุปกรณ์..."
-                    value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
-                    onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
-                    className="w-full bg-white border-gray-200"
-                  />
-                </div>
-                <div className="space-y-1.5">
-                  <label className="text-sm font-medium text-gray-700">
-                    ตู้ (Cabinet)
-                  </label>
-                  <Select
-                    value={selectedStockId || 'all'}
-                    onValueChange={(v) => setSelectedStockId(v === 'all' ? '' : v)}
-                    disabled={loadingCabinets}
-                  >
-                    <SelectTrigger className="w-full bg-white border-gray-200">
-                      <SelectValue placeholder="ทั้งหมด" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="all">ทั้งหมด</SelectItem>
-                      {cabinets.map((c) => (
-                        <SelectItem key={c.id} value={String(c.stock_id)}>
-                          {c.cabinet_name || c.cabinet_code || `Stock ${c.stock_id}`}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-              </div>
-              <div className="flex gap-2 mt-4">
-                <Button onClick={handleSearch} disabled={loading} className="shadow-sm">
-                  <Search className="h-4 w-4 mr-2" />
-                  ค้นหา
-                </Button>
-                <Button
-                  variant="outline"
-                  onClick={handleClear}
-                  className="border-gray-300"
-                  disabled={!hasActiveFilters}
-                >
-                  <X className="h-4 w-4 mr-2" />
-                  ล้าง
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
+          <WeighingStockFilterSection
+            itemNameDraft={itemNameDraft}
+            onItemNameDraftChange={(v) => {
+              setItemNameDraft(v);
+              if (v.trim()) setItemcodeDraft('');
+            }}
+            itemcodeDraft={itemcodeDraft}
+            onItemcodeDraftChange={setItemcodeDraft}
+            selectedStockId={selectedStockId}
+            onSelectedStockIdChange={setSelectedStockId}
+            cabinets={cabinets}
+            loadingCabinets={loadingCabinets}
+            loading={loading}
+            onApply={handleSearch}
+            onClear={handleClear}
+            canClear={
+              !!itemNameDraft ||
+              !!itemcodeDraft ||
+              !!selectedStockId ||
+              hasActiveFilters
+            }
+          />
 
           <Card className="shadow-sm border-gray-200/80 overflow-hidden">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 border-b bg-slate-50/50">

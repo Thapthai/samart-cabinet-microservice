@@ -15,7 +15,7 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Loader2 } from "lucide-react";
 import SearchableSelect from "@/app/admin/cabinet-departments/components/SearchableSelect";
-import { weighingApi, departmentApi } from "@/lib/api";
+import { cabinetApi, departmentApi } from "@/lib/api";
 
 interface Department {
   ID: number;
@@ -98,21 +98,23 @@ export default function EditMappingDialog({
   const loadCabinets = async (keyword?: string) => {
     try {
       setLoadingCabinets(true);
-      const response = await weighingApi.getCabinets();
-      if (response.success && response.data) {
-        let list = response.data as Cabinet[];
-        if (keyword?.trim()) {
-          const k = keyword.trim().toLowerCase();
-          list = list.filter(
-            (c) =>
-              (c.cabinet_name || "").toLowerCase().includes(k) ||
-              (c.cabinet_code || "").toLowerCase().includes(k)
-          );
-        }
-        setCabinets(list);
+      const params: { page: number; limit: number; keyword?: string } = {
+        page: 1,
+        limit: 500,
+      };
+      if (keyword?.trim()) params.keyword = keyword.trim();
+      const response = (await cabinetApi.getAll(params)) as {
+        success?: boolean;
+        data?: Cabinet[];
+      };
+      if (response?.success !== false && Array.isArray(response?.data)) {
+        setCabinets(response.data);
+      } else {
+        setCabinets([]);
       }
     } catch (error) {
-      console.error("Failed to load weighing cabinets:", error);
+      console.error("Failed to load cabinets:", error);
+      setCabinets([]);
     } finally {
       setLoadingCabinets(false);
     }
@@ -126,11 +128,11 @@ export default function EditMappingDialog({
       >
         <DialogHeader>
           <DialogTitle>แก้ไขการเชื่อมโยง</DialogTitle>
-          <DialogDescription>แก้ไขข้อมูลการเชื่อมโยงตู้ Weighing กับแผนก</DialogDescription>
+          <DialogDescription>แก้ไขการเชื่อมโยงตู้กับแผนก</DialogDescription>
         </DialogHeader>
         <div className="grid gap-4 py-4">
           <SearchableSelect
-            label="ตู้ Weighing"
+            label="ตู้"
             placeholder="เลือกตู้"
             value={formData.cabinet_id}
             onValueChange={(value) => setFormData({ ...formData, cabinet_id: value })}
