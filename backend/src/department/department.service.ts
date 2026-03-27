@@ -1,17 +1,15 @@
-import { Injectable, Logger, NotFoundException, BadRequestException } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import {
   CreateCabinetDepartmentDto,
   UpdateCabinetDepartmentDto,
 } from './dto/department.dto';
-import { CreateCabinetDto, UpdateCabinetDto } from './dto/cabinet.dto';
 
 @Injectable()
 export class DepartmentService {
   private readonly logger = new Logger(DepartmentService.name);
-  private readonly HOSPITAL_PREFIX = 'VTN';
 
-  constructor(private prisma: PrismaService) { }
+  constructor(private prisma: PrismaService) {}
 
   async getAllDepartments(query?: { page?: number; limit?: number; keyword?: string }) {
     try {
@@ -48,143 +46,8 @@ export class DepartmentService {
     }
   }
 
-  private async generateCabinetCode(options: {
-    hospitalPrefix?: string;
-    department_id?: number;
-    stock_id?: number;
-  }): Promise<{ cabinet_code: string; stock_id: number }> {
-    const prefix = options.hospitalPrefix ?? this.HOSPITAL_PREFIX;
-    let refDepId = '';
-    if (options.department_id) {
-      const dept = await this.prisma.department.findUnique({
-        where: { ID: options.department_id },
-        select: { RefDepID: true },
-      });
-      if (dept?.RefDepID?.trim()) refDepId = dept.RefDepID.trim().toUpperCase();
-    }
-    let stock_id: number;
-    if (options.stock_id != null && options.stock_id > 0) {
-      stock_id = options.stock_id;
-    } else {
-      const maxStock = await this.prisma.cabinet.findFirst({
-        where: { stock_id: { not: null } },
-        select: { stock_id: true },
-        orderBy: { stock_id: 'desc' },
-      });
-      stock_id = (maxStock?.stock_id ?? 0) + 1;
-    }
-    const segment = refDepId ? `${prefix}-${refDepId}` : prefix;
-    const cabinet_code = `${segment}-${String(stock_id).padStart(3, '0')}`;
-    return { cabinet_code, stock_id };
-  }
-
-  async createCabinet(data: CreateCabinetDto) {
-    try {
-      const { department_id, ...rest } = data;
-      let cabinet_code = data.cabinet_code?.trim();
-      let stock_id = data.stock_id;
-      if (!cabinet_code || stock_id == null) {
-        const generated = await this.generateCabinetCode({
-          hospitalPrefix: this.HOSPITAL_PREFIX,
-          department_id,
-          stock_id: stock_id ?? undefined,
-        });
-        if (!cabinet_code) cabinet_code = generated.cabinet_code;
-        if (stock_id == null) stock_id = generated.stock_id;
-      }
-      const cabinet = await this.prisma.cabinet.create({
-        data: {
-          ...rest,
-          cabinet_code,
-          stock_id,
-          ...(department_id ? { cabinet_status: 'USED' } : {}),
-        },
-      });
-      if (department_id) {
-        const department = await this.prisma.department.findUnique({
-          where: { ID: department_id },
-        });
-        if (department) {
-          await this.prisma.cabinetDepartment.create({
-            data: { cabinet_id: cabinet.id, department_id, status: 'ACTIVE' },
-          });
-        }
-      }
-      const cabinetWithDepts = await this.prisma.cabinet.findUnique({
-        where: { id: cabinet.id },
-        include: {
-          cabinetDepartments: {
-            select: { id: true, department_id: true, status: true },
-          },
-        },
-      });
-      return { success: true, message: 'Cabinet created successfully', data: cabinetWithDepts ?? cabinet };
-    } catch (err: any) {
-      this.logger.error(`Error creating cabinet: ${err.message}`);
-      return { success: false, message: 'Failed to create cabinet', error: err.message };
-    }
-  }
-
-  async getAllCabinets(query?: { page?: number; limit?: number; keyword?: string }) {
-    const page = query?.page || 1;
-    const limit = query?.limit || 10;
-    const skip = (page - 1) * limit;
-    const where: any = {};
-    if (query?.keyword) {
-      where.OR = [
-        { cabinet_name: { contains: query.keyword } },
-        { cabinet_code: { contains: query.keyword } },
-      ];
-    }
-    const [cabinets, total] = await Promise.all([
-      this.prisma.cabinet.findMany({
-        where,
-        skip,
-        take: limit,
-        include: {
-          cabinetDepartments: {
-            select: { id: true, department_id: true, status: true },
-          },
-        },
-      }),
-      this.prisma.cabinet.count({ where }),
-    ]);
-    return { success: true, data: cabinets, total, page, limit, lastPage: Math.ceil(total / limit) };
-  }
-
-  async getCabinetById(id: number) {
-    const cabinet = await this.prisma.cabinet.findUnique({
-      where: { id },
-    });
-    return { success: true, data: cabinet };
-  }
-
-  async updateCabinet(id: number, data: UpdateCabinetDto) {
-    try {
-      const cabinet = await this.prisma.cabinet.update({
-        where: { id },
-        data,
-      });
-      return { success: true, message: 'Cabinet updated successfully', data: cabinet };
-    } catch (err: any) {
-      this.logger.error(`Error updating cabinet: ${err.message}`);
-      return { success: false, message: 'Failed to update cabinet', error: err.message };
-    }
-  }
-
-  async deleteCabinet(id: number) {
-    try {
-      await this.prisma.cabinet.delete({ where: { id } });
-      return { success: true, message: 'Cabinet deleted successfully' };
-    } catch (err: any) {
-      this.logger.error(`Error deleting cabinet: ${err.message}`);
-      return { success: false, message: 'Failed to delete cabinet', error: err.message };
-    }
-  }
-
   async createCabinetDepartment(data: CreateCabinetDepartmentDto) {
     try {
-
       const [cabinet, department] = await Promise.all([
         this.prisma.cabinet.findUnique({ where: { id: data.cabinet_id } }),
         this.prisma.department.findUnique({

@@ -5,37 +5,27 @@ import { cabinetApi } from '@/lib/api';
 import ProtectedRoute from '@/components/ProtectedRoute';
 import AppLayout from '@/components/AppLayout';
 import { toast } from 'sonner';
-import { Package, Plus, Search } from 'lucide-react';
+import { Package, Plus } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Card, CardContent } from '@/components/ui/card';
 import CreateCabinetDialog from './components/CreateCabinetDialog';
+import CabinetsSearchBar from './components/CabinetsSearchBar';
 import EditCabinetDialog from './components/EditCabinetDialog';
 import DeleteCabinetDialog from './components/DeleteCabinetDialog';
 import CabinetsTable from './components/CabinetsTable';
-
-interface Cabinet {
-  id: number;
-  cabinet_name?: string;
-  cabinet_code?: string;
-  cabinet_type?: string;
-  stock_id?: number;
-  cabinet_status?: string;
-  created_at?: string;
-  updated_at?: string;
-}
+import type { ManagementCabinet } from './types';
 
 export default function CabinetsPage() {
-  const [cabinets, setCabinets] = useState<Cabinet[]>([]);
-  const [filteredCabinets, setFilteredCabinets] = useState<Cabinet[]>([]);
+  const [cabinets, setCabinets] = useState<ManagementCabinet[]>([]);
   const [loading, setLoading] = useState(true);
-  const [searchTerm, setSearchTerm] = useState('');
+  /** ข้อความในช่อง (พิมพ์ได้โดยไม่ยิง API) */
+  const [searchInput, setSearchInput] = useState('');
+  /** คำค้นที่ใช้กับ API หลังกดค้นหา / Enter */
+  const [searchKeyword, setSearchKeyword] = useState('');
   const [showCreateDialog, setShowCreateDialog] = useState(false);
   const [showEditDialog, setShowEditDialog] = useState(false);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
-  const [selectedCabinet, setSelectedCabinet] = useState<Cabinet | null>(null);
-  
-  // Pagination states
+  const [selectedCabinet, setSelectedCabinet] = useState<ManagementCabinet | null>(null);
+
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [totalItems, setTotalItems] = useState(0);
@@ -43,25 +33,27 @@ export default function CabinetsPage() {
 
   useEffect(() => {
     fetchCabinets();
-  }, [currentPage, searchTerm]);
-
-  useEffect(() => {
-    filterCabinets();
-  }, [cabinets, searchTerm]);
+  }, [currentPage, searchKeyword]);
 
   const fetchCabinets = async () => {
     try {
       setLoading(true);
-      const params: any = {
+      const params: Record<string, string | number> = {
         page: currentPage,
         limit: itemsPerPage,
       };
-      
-      if (searchTerm) {
-        params.keyword = searchTerm;
+
+      if (searchKeyword.trim()) {
+        params.keyword = searchKeyword.trim();
       }
-      
-      const response = await cabinetApi.getAll(params) as { success?: boolean; data?: any[]; total?: number; lastPage?: number; message?: string };
+
+      const response = (await cabinetApi.getAll(params)) as {
+        success?: boolean;
+        data?: ManagementCabinet[];
+        total?: number;
+        lastPage?: number;
+        message?: string;
+      };
       if (response?.success === false) {
         toast.error(response.message || 'โหลดข้อมูลตู้ไม่สำเร็จ');
         setCabinets([]);
@@ -74,7 +66,7 @@ export default function CabinetsPage() {
         setTotalItems(response.total ?? 0);
         setTotalPages(response.lastPage ?? 1);
       }
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Failed to fetch cabinets:', error);
       toast.error('ไม่สามารถโหลดข้อมูลตู้ได้');
     } finally {
@@ -82,31 +74,17 @@ export default function CabinetsPage() {
     }
   };
 
-  const filterCabinets = () => {
-    let filtered = cabinets;
-
-    // Filter by search term (client-side for instant feedback)
-    if (searchTerm) {
-      filtered = filtered.filter(cabinet =>
-        cabinet.cabinet_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        cabinet.cabinet_code?.toLowerCase().includes(searchTerm.toLowerCase())
-      );
-    }
-
-    setFilteredCabinets(filtered);
-  };
-
   const handlePageChange = (page: number) => {
     setCurrentPage(page);
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
-  const handleEdit = (cabinet: Cabinet) => {
+  const handleEdit = (cabinet: ManagementCabinet) => {
     setSelectedCabinet(cabinet);
     setShowEditDialog(true);
   };
 
-  const handleDelete = (cabinet: Cabinet) => {
+  const handleDelete = (cabinet: ManagementCabinet) => {
     setSelectedCabinet(cabinet);
     setShowDeleteDialog(true);
   };
@@ -115,7 +93,6 @@ export default function CabinetsPage() {
     <ProtectedRoute>
       <AppLayout fullWidth>
         <div className="space-y-6">
-          {/* Header */}
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
             <div className="flex items-center space-x-3">
               <div className="p-2 bg-blue-100 rounded-lg">
@@ -135,27 +112,23 @@ export default function CabinetsPage() {
             </Button>
           </div>
 
-          {/* Search */}
-          <Card>
-            <CardContent className="pt-6">
-              <div className="relative">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
-                <Input
-                  placeholder="ค้นหาตู้ (ชื่อตู้, รหัสตู้)..."
-                  value={searchTerm}
-                  onChange={(e) => {
-                    setSearchTerm(e.target.value);
-                    setCurrentPage(1);
-                  }}
-                  className="pl-10"
-                />
-              </div>
-            </CardContent>
-          </Card>
+          <CabinetsSearchBar
+            value={searchInput}
+            onValueChange={setSearchInput}
+            loading={loading}
+            onSearch={() => {
+              setSearchKeyword(searchInput.trim());
+              setCurrentPage(1);
+            }}
+            onClear={() => {
+              setSearchInput('');
+              setSearchKeyword('');
+              setCurrentPage(1);
+            }}
+          />
 
-          {/* Table Section */}
           <CabinetsTable
-            cabinets={filteredCabinets}
+            cabinets={cabinets}
             loading={loading}
             currentPage={currentPage}
             totalPages={totalPages}
@@ -167,7 +140,6 @@ export default function CabinetsPage() {
           />
         </div>
 
-        {/* Dialogs */}
         <CreateCabinetDialog
           open={showCreateDialog}
           onOpenChange={setShowCreateDialog}

@@ -4,7 +4,6 @@ import {
   CreateCabinetDepartmentDto,
   UpdateCabinetDepartmentDto,
 } from './dto/department.dto';
-import { CreateCabinetDto, UpdateCabinetDto } from './dto/cabinet.dto';
 
 @Controller('departments')
 export class DepartmentController {
@@ -30,45 +29,6 @@ export class DepartmentController {
         HttpStatus.INTERNAL_SERVER_ERROR,
       );
     }
-  }
-}
-
-@Controller('cabinets')
-export class CabinetController {
-  constructor(private readonly departmentService: DepartmentService) {}
-
-  @Post()
-  create(@Body() dto: CreateCabinetDto) {
-    return this.departmentService.createCabinet(dto);
-  }
-
-  @Get()
-  getAll(
-    @Query('page') page?: string,
-    @Query('limit') limit?: string,
-    @Query('keyword') keyword?: string,
-  ) {
-    const query = {
-      page: page ? parseInt(page, 10) : undefined,
-      limit: limit ? parseInt(limit, 10) : undefined,
-      keyword,
-    };
-    return this.departmentService.getAllCabinets(query);
-  }
-
-  @Get(':id')
-  getById(@Param('id', ParseIntPipe) id: number) {
-    return this.departmentService.getCabinetById(id);
-  }
-
-  @Put(':id')
-  update(@Param('id', ParseIntPipe) id: number, @Body() dto: UpdateCabinetDto) {
-    return this.departmentService.updateCabinet(id, dto);
-  }
-
-  @Delete(':id')
-  delete(@Param('id', ParseIntPipe) id: number) {
-    return this.departmentService.deleteCabinet(id);
   }
 }
 

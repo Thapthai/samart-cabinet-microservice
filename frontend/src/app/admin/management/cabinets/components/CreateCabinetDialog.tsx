@@ -1,11 +1,13 @@
 import { useState, useEffect } from 'react';
-import { cabinetApi } from '@/lib/api';
+import Link from 'next/link';
+import { cabinetApi, type CabinetTypeRow } from '@/lib/api';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { toast } from 'sonner';
 import { Package } from 'lucide-react';
+import CabinetTypeSelect from './CabinetTypeSelect';
 
 interface CreateCabinetDialogProps {
   open: boolean;
@@ -19,9 +21,12 @@ export default function CreateCabinetDialog({
   onSuccess,
 }: CreateCabinetDialogProps) {
   const [loading, setLoading] = useState(false);
+  const [typesLoading, setTypesLoading] = useState(false);
+  const [types, setTypes] = useState<CabinetTypeRow[]>([]);
   const [formData, setFormData] = useState({
     cabinet_name: '',
     stock_id: '',
+    cabinet_type: '',
   });
 
   useEffect(() => {
@@ -29,18 +34,51 @@ export default function CreateCabinetDialog({
       setFormData({
         cabinet_name: '',
         stock_id: '',
+        cabinet_type: '',
       });
+      return;
     }
+    let cancelled = false;
+    (async () => {
+      setTypesLoading(true);
+      try {
+        const res = await cabinetApi.getTypes();
+        if (!cancelled && res.success && res.data) {
+          setTypes(res.data);
+        } else if (!cancelled && res.success === false) {
+          toast.error(res.message || 'โหลดประเภทตู้ไม่สำเร็จ');
+        }
+      } catch {
+        if (!cancelled) toast.error('โหลดประเภทตู้ไม่สำเร็จ');
+      } finally {
+        if (!cancelled) setTypesLoading(false);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
   }, [open]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
+    if (!formData.cabinet_type.trim()) {
+      toast.error('กรุณาเลือกประเภทตู้');
+      return;
+    }
+
     try {
       setLoading(true);
-      const data: any = {
-        cabinet_name: formData.cabinet_name || undefined,
+      const data: {
+        cabinet_name?: string;
+        cabinet_type: string;
+        stock_id?: number;
+      } = {
+        cabinet_type: formData.cabinet_type.trim().toUpperCase(),
       };
+      if (formData.cabinet_name.trim()) {
+        data.cabinet_name = formData.cabinet_name.trim();
+      }
       if (formData.stock_id.trim()) {
         const sid = parseInt(formData.stock_id, 10);
         if (!Number.isNaN(sid)) data.stock_id = sid;
@@ -55,8 +93,9 @@ export default function CreateCabinetDialog({
       } else {
         toast.error(response.message || 'ไม่สามารถเพิ่มตู้ได้');
       }
-    } catch (error: any) {
-      toast.error(error.response?.data?.message || 'เกิดข้อผิดพลาดในการเพิ่มตู้');
+    } catch (error: unknown) {
+      const err = error as { response?: { data?: { message?: string } } };
+      toast.error(err.response?.data?.message || 'เกิดข้อผิดพลาดในการเพิ่มตู้');
     } finally {
       setLoading(false);
     }
@@ -71,11 +110,34 @@ export default function CreateCabinetDialog({
             <span>เพิ่มตู้ใหม่</span>
           </DialogTitle>
           <DialogDescription>
-            รหัสตู้จะสร้างอัตโนมัติจากระบบ
+            รหัสตู้จะสร้างอัตโนมัติจากระบบ — ต้องเลือกประเภทตู้จาก master
           </DialogDescription>
         </DialogHeader>
 
         <form onSubmit={handleSubmit} className="space-y-4">
+          <div className="space-y-2">
+            <Label htmlFor="cabinet_type_create">ประเภทตู้ *</Label>
+            {typesLoading ? (
+              <p className="text-sm text-muted-foreground">กำลังโหลดประเภทตู้...</p>
+            ) : types.length === 0 ? (
+              <p className="text-sm text-muted-foreground">
+                ยังไม่มีประเภทตู้ที่ใช้งาน —{' '}
+                <Link href="/admin/management/cabinet_type" className="text-primary underline">
+                  ไปตั้งค่าประเภทตู้
+                </Link>
+              </p>
+            ) : (
+              <CabinetTypeSelect
+                id="cabinet_type_create"
+                value={formData.cabinet_type}
+                onValueChange={(v) => setFormData({ ...formData, cabinet_type: v })}
+                types={types}
+                disabled={loading}
+                placeholder="เลือกประเภทตู้"
+              />
+            )}
+          </div>
+
           <div className="space-y-2">
             <Label htmlFor="cabinet_name">ชื่อตู้</Label>
             <Input
@@ -112,7 +174,7 @@ export default function CreateCabinetDialog({
             <Button
               type="submit"
               className="bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700"
-              disabled={loading}
+              disabled={loading || typesLoading || types.length === 0}
             >
               {loading ? 'กำลังเพิ่ม...' : 'เพิ่มตู้'}
             </Button>

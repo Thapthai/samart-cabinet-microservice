@@ -1,38 +1,31 @@
 'use client';
 
-import { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
-import { Edit, Trash2, Loader2, Package } from 'lucide-react';
 import {
   ChevronLeft,
   ChevronRight,
   ChevronsLeft,
   ChevronsRight,
+  Edit,
+  Loader2,
+  Package,
+  Trash2,
 } from 'lucide-react';
-
-interface Cabinet {
-  id: number;
-  cabinet_name?: string;
-  cabinet_code?: string;
-  cabinet_type?: string;
-  stock_id?: number;
-  cabinet_status?: string;
-  created_at?: string;
-  updated_at?: string;
-}
+import type { ManagementCabinet } from '../types';
+import { cabinetTypeDisplayLabel } from '../types';
 
 interface CabinetsTableProps {
-  cabinets: Cabinet[];
+  cabinets: ManagementCabinet[];
   loading: boolean;
   currentPage: number;
   totalPages: number;
   totalItems: number;
   itemsPerPage: number;
-  onEdit: (cabinet: Cabinet) => void;
-  onDelete: (cabinet: Cabinet) => void;
+  onEdit: (cabinet: ManagementCabinet) => void;
+  onDelete: (cabinet: ManagementCabinet) => void;
   onPageChange: (page: number) => void;
 }
 
@@ -47,7 +40,7 @@ export default function CabinetsTable({
   onDelete,
   onPageChange,
 }: CabinetsTableProps) {
-  const getStatusBadge = (status?: string) => {
+  const getStatusBadge = (status?: string | null) => {
     switch (status) {
       case 'AVAILIABLE':
         return <Badge className="bg-green-500 hover:bg-green-600">ใช้งานได้</Badge>;
@@ -106,41 +99,53 @@ export default function CabinetsTable({
               </TableRow>
             </TableHeader>
             <TableBody>
-              {cabinets.map((cabinet) => (
-                <TableRow key={cabinet.id}>
-                  <TableCell className="font-medium">{cabinet.id}</TableCell>
-                  <TableCell>{cabinet.cabinet_name || '-'}</TableCell>
-                  <TableCell>{cabinet.cabinet_code || '-'}</TableCell>
-                  <TableCell>{cabinet.cabinet_type || '-'}</TableCell>
-                  <TableCell>{cabinet.stock_id || '-'}</TableCell>
-                  <TableCell>{getStatusBadge(cabinet.cabinet_status)}</TableCell>
-                  <TableCell className="text-right">
-                    <div className="flex items-center justify-end space-x-2">
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => onEdit(cabinet)}
-                        className="h-8 w-8 p-0"
-                      >
-                        <Edit className="h-4 w-4" />
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => onDelete(cabinet)}
-                        className="h-8 w-8 p-0 text-red-500 hover:text-red-600 hover:bg-red-50"
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
-                    </div>
-                  </TableCell>
-                </TableRow>
-              ))}
+              {cabinets.map((cabinet) => {
+                const label = cabinetTypeDisplayLabel(cabinet);
+                const code = cabinet.cabinet_type?.trim();
+                return (
+                  <TableRow key={cabinet.id}>
+                    <TableCell className="font-medium">{cabinet.id}</TableCell>
+                    <TableCell>{cabinet.cabinet_name || '-'}</TableCell>
+                    <TableCell>{cabinet.cabinet_code || '-'}</TableCell>
+                    <TableCell>
+                      <div className="flex flex-wrap items-center gap-1.5">
+                        <span>{label}</span>
+                        {code && cabinet.cabinetTypeDef?.name_th && (
+                          <Badge variant="secondary" className="text-xs font-normal">
+                            {code}
+                          </Badge>
+                        )}
+                      </div>
+                    </TableCell>
+                    <TableCell>{cabinet.stock_id ?? '-'}</TableCell>
+                    <TableCell>{getStatusBadge(cabinet.cabinet_status)}</TableCell>
+                    <TableCell className="text-right">
+                      <div className="flex items-center justify-end space-x-2">
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => onEdit(cabinet)}
+                          className="h-8 w-8 p-0"
+                        >
+                          <Edit className="h-4 w-4" />
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => onDelete(cabinet)}
+                          className="h-8 w-8 p-0 text-red-500 hover:text-red-600 hover:bg-red-50"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                );
+              })}
             </TableBody>
           </Table>
         </div>
 
-        {/* Pagination */}
         {totalPages > 1 && (
           <div className="flex items-center justify-between mt-4">
             <div className="text-sm text-gray-600">

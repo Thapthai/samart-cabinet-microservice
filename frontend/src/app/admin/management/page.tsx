@@ -1,12 +1,23 @@
 'use client';
 
 import Link from 'next/link';
-import { Package, Users, Shield } from 'lucide-react';
+import { Package, Users, Shield, Layers } from 'lucide-react';
 import ProtectedRoute from '@/components/ProtectedRoute';
 import AppLayout from '@/components/AppLayout';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 
 const managementMenus = [
+  {
+    name: 'จัดการประเภทตู้',
+    href: '/admin/management/cabinet_type',
+    icon: Layers,
+    description: 'ประเภท Weighing / RFID — วันหมดอายุ และการแสดง RFID',
+    color: 'from-violet-500 to-fuchsia-600',
+    bgLight: 'bg-violet-50',
+    borderColor: 'border-violet-200',
+    iconBg: 'bg-violet-100',
+    iconColor: 'text-violet-700',
+  },
   {
     name: 'จัดการตู้ Cabinet',
     href: '/admin/management/cabinets',

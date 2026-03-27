@@ -55,12 +55,7 @@ export const adminMenuItems: AdminMenuItem[] = [
         description: 'จัดการอุปกรณ์และสต๊อก',
         noHref: true,
         submenu: [
-            {
-                name: 'จัดการตู้ Weighing',
-                href: '/admin/weighing-departments',
-                icon: Network,
-                description: 'จัดการตู้ Cabinet และเชื่อมโยงกับแผนก',
-            },
+
             {
                 name: 'สต็อกอุปกรณ์ในตู้ ',
                 href: '/admin/weighing-stock',
@@ -89,10 +84,22 @@ export const adminMenuItems: AdminMenuItem[] = [
         noHref: true,
         submenu: [
             {
-                name: 'จัดการตู้ Cabinet',
+                name: 'จัดการประเภทตู้',
+                href: '/admin/management/cabinet_type',
+                icon: Package,
+                description: 'กำหนดพฤติกรรมประเภทตู้ (Weighing / RFID ฯลฯ)',
+            },
+            {
+                name: 'จัดการตู้',
                 href: '/admin/management/cabinets',
                 icon: Package,
                 description: 'จัดการตู้ Cabinet',
+            },
+            {
+                name: 'จัดการตู้ - แผนก',
+                href: '/admin/management/cabinets-departments',
+                icon: Network,
+                description: 'จัดการตู้ Cabinet และเชื่อมโยงกับแผนก',
             },
         ],
     },

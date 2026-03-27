@@ -611,6 +611,27 @@ model Department {
   @@map("department")
 }
 
+/// ประเภทตู้ — กำหนดพฤติกรรมระบบต่อประเภท (เช่น WEIGHING ไม่ใช้วันหมดอายุ, RFID ใช้วันหมดอายุและแสดง RFID)
+/// ค่า `code` ต้องตรงกับ `cabinet.cabinet_type` (แนะนำเก็บเป็นตัวพิมพ์ใหญ่)
+model CabinetType {
+  code           String   @id @map("code") @db.VarChar(64)
+  name_th        String?  @map("name_th") @db.VarChar(255)
+  name_en        String?  @map("name_en") @db.VarChar(255)
+  /// ใช้กับ itemstock.ExpireDate / แดชบอร์ดหมดอายุ — false = ประเภทนี้ไม่เน้นวันหมดอายุ (เช่น Weighing)
+  has_expiry     Boolean  @default(true) @map("has_expiry")
+  /// แสดงหรือใช้งาน RFID code ใน UI / flow (เช่น RFID)
+  show_rfid_code Boolean  @default(false) @map("show_rfid_code")
+  description    String?  @map("description") @db.Text
+  sort_order     Int      @default(0) @map("sort_order")
+  is_active      Boolean  @default(true) @map("is_active")
+  created_at     DateTime @default(now()) @map("created_at")
+  updated_at     DateTime @updatedAt @map("updated_at")
+
+  cabinets cabinet[]
+
+  @@map("app_microservice_cabinets_type")
+}
+
 model cabinet {
   id             Int      @id @default(autoincrement())
   cabinet_name   String?  @map("cabinet_name") @db.VarChar(255)
@@ -621,12 +642,14 @@ model cabinet {
   created_at     DateTime @default(now()) @map("created_at")
   updated_at     DateTime @updatedAt @map("updated_at")
 
+  cabinetTypeDef          CabinetType?             @relation(fields: [cabinet_type], references: [code], onDelete: Restrict, onUpdate: Cascade)
   cabinetDepartments      cabinetDepartment[]
   itemStocks              ItemStock[]
   supplyItemReturnRecords SupplyItemReturnRecord[]
   cabinetItemSettings     CabinetItemSetting[]
   itemSlotInCabinet       ItemSlotInCabinet[]
 
+  @@index([cabinet_type])
   @@map("app_microservice_cabinets")
 }
 

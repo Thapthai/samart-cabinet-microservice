@@ -11,20 +11,13 @@ import {
 import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
 import { AlertTriangle, Loader2 } from 'lucide-react';
-
-interface Cabinet {
-  id: number;
-  cabinet_name?: string;
-  cabinet_code?: string;
-  cabinet_type?: string;
-  stock_id?: number;
-  cabinet_status?: string;
-}
+import type { ManagementCabinet } from '../types';
+import { cabinetTypeDisplayLabel } from '../types';
 
 interface DeleteCabinetDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  cabinet: Cabinet | null;
+  cabinet: ManagementCabinet | null;
   onSuccess: () => void;
 }
 
@@ -53,10 +46,11 @@ export default function DeleteCabinetDialog({
       } else {
         toast.error(response.message || 'ไม่สามารถลบตู้ได้');
       }
-    } catch (error: any) {
-      const errorMessage = error.response?.data?.message || error.message || 'เกิดข้อผิดพลาดในการลบตู้';
-      
-      // Check if error is about cabinet being used
+    } catch (error: unknown) {
+      const err = error as { response?: { data?: { message?: string } }; message?: string };
+      const errorMessage =
+        err.response?.data?.message || err.message || 'เกิดข้อผิดพลาดในการลบตู้';
+
       if (errorMessage.includes('mapping') || errorMessage.includes('ใช้') || errorMessage.includes('department')) {
         toast.error(errorMessage, {
           duration: 5000,
@@ -69,6 +63,11 @@ export default function DeleteCabinetDialog({
       setLoading(false);
     }
   };
+
+  const typeLine =
+    cabinet && (cabinet.cabinet_type || cabinet.cabinetTypeDef)
+      ? cabinetTypeDisplayLabel(cabinet)
+      : null;
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -86,7 +85,7 @@ export default function DeleteCabinetDialog({
             </div>
           </div>
         </DialogHeader>
-        
+
         <div className="py-4">
           <p className="text-sm text-gray-600">
             คุณกำลังจะลบตู้{' '}
@@ -108,10 +107,10 @@ export default function DeleteCabinetDialog({
                   <span className="font-medium">{cabinet.cabinet_code}</span>
                 </div>
               )}
-              {cabinet.cabinet_type && (
-                <div className="flex justify-between text-sm">
-                  <span className="text-gray-500">ประเภท:</span>
-                  <span className="font-medium">{cabinet.cabinet_type}</span>
+              {typeLine && (
+                <div className="flex justify-between text-sm gap-2">
+                  <span className="text-gray-500 shrink-0">ประเภท:</span>
+                  <span className="font-medium text-right">{typeLine}</span>
                 </div>
               )}
               <div className="flex justify-between text-sm">

@@ -1556,10 +1556,34 @@ export const itemStockApi = {
   },
 };
 
+/** รายการประเภทตู้จาก master (ใช้ทั้ง cabinetApi.getTypes และ cabinetTypeApi) */
+export type CabinetTypeRow = {
+  code: string;
+  name_th: string | null;
+  name_en: string | null;
+  has_expiry: boolean;
+  show_rfid_code: boolean;
+  description: string | null;
+  sort_order?: number;
+  is_active?: boolean;
+  created_at?: string;
+  updated_at?: string;
+};
+
 // =========================== Cabinet API ===========================
 export const cabinetApi = {
   getAll: async (params?: { page?: number; limit?: number; keyword?: string; sort_by?: string; sort_order?: string }): Promise<PaginatedResponse<any>> => {
     const response = await api.get('/cabinets', { params });
+    return response.data;
+  },
+
+  /** ประเภทตู้ที่ active — สำหรับ dropdown (GET /cabinets/types) */
+  getTypes: async (): Promise<{
+    success: boolean;
+    data?: CabinetTypeRow[];
+    message?: string;
+  }> => {
+    const response = await api.get('/cabinets/types');
     return response.data;
   },
 
@@ -1580,6 +1604,52 @@ export const cabinetApi = {
 
   delete: async (id: number): Promise<ApiResponse<void>> => {
     const response = await api.delete(`/cabinets/${id}`);
+    return response.data;
+  },
+};
+
+// =========================== Cabinet type (master) API ===========================
+export const cabinetTypeApi = {
+  getAll: async (): Promise<{ success: boolean; data?: CabinetTypeRow[]; message?: string }> => {
+    const response = await api.get('/cabinet-types');
+    return response.data;
+  },
+  getByCode: async (
+    code: string,
+  ): Promise<{ success: boolean; data?: CabinetTypeRow | null; message?: string }> => {
+    const response = await api.get(`/cabinet-types/${encodeURIComponent(code)}`);
+    return response.data;
+  },
+  create: async (data: {
+    code: string;
+    name_th?: string;
+    name_en?: string;
+    has_expiry?: boolean;
+    show_rfid_code?: boolean;
+    description?: string;
+    sort_order?: number;
+    is_active?: boolean;
+  }): Promise<{ success: boolean; data?: CabinetTypeRow; message?: string }> => {
+    const response = await api.post('/cabinet-types', data);
+    return response.data;
+  },
+  update: async (
+    code: string,
+    data: {
+      name_th?: string;
+      name_en?: string;
+      has_expiry?: boolean;
+      show_rfid_code?: boolean;
+      description?: string;
+      sort_order?: number;
+      is_active?: boolean;
+    },
+  ): Promise<{ success: boolean; data?: CabinetTypeRow; message?: string }> => {
+    const response = await api.put(`/cabinet-types/${encodeURIComponent(code)}`, data);
+    return response.data;
+  },
+  delete: async (code: string): Promise<{ success: boolean; message?: string }> => {
+    const response = await api.delete(`/cabinet-types/${encodeURIComponent(code)}`);
     return response.data;
   },
 };
