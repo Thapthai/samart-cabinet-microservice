@@ -58,8 +58,8 @@ export const adminMenuItems: AdminMenuItem[] = [
 
             {
                 name: 'สต็อกอุปกรณ์ในตู้ ',
-                href: '/admin/weighing-stock',
-                description: 'เมนูสต๊อกอุปกรณ์ที่มีในตู้ Weighing',
+                href: '/admin/items-stock',
+                description: 'เมนูสต๊อกอุปกรณ์ที่มีในตู้',
                 icon: Package,
             },
             {

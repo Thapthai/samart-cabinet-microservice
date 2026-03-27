@@ -1120,11 +1120,19 @@ export const reportsApi = {
   },
 
   // Cabinet Stock Report (รายงานสต๊อกอุปกรณ์ในตู้) — Backend POST /reports/cabinet-stock/excel|pdf returns JSON { success, data: { buffer, filename, contentType } }
-  downloadCabinetStockExcel: async (params?: { cabinetId?: number; cabinetCode?: string; departmentId?: number }): Promise<void> => {
+  downloadCabinetStockExcel: async (params?: {
+    cabinetId?: number;
+    cabinetCode?: string;
+    departmentId?: number;
+    keyword?: string;
+    statusFilter?: string;
+  }): Promise<void> => {
     const body = {
       cabinetId: params?.cabinetId,
       cabinetCode: params?.cabinetCode,
       departmentId: params?.departmentId,
+      keyword: params?.keyword?.trim() || undefined,
+      statusFilter: params?.statusFilter && params.statusFilter !== 'all' ? params.statusFilter : undefined,
     };
     const response = await api.post('/reports/cabinet-stock/excel', body);
     const res = response.data as { success?: boolean; data?: { buffer?: string; filename?: string; contentType?: string } };
@@ -1143,11 +1151,19 @@ export const reportsApi = {
     window.URL.revokeObjectURL(url);
   },
 
-  downloadCabinetStockPdf: async (params?: { cabinetId?: number; cabinetCode?: string; departmentId?: number }): Promise<void> => {
+  downloadCabinetStockPdf: async (params?: {
+    cabinetId?: number;
+    cabinetCode?: string;
+    departmentId?: number;
+    keyword?: string;
+    statusFilter?: string;
+  }): Promise<void> => {
     const body = {
       cabinetId: params?.cabinetId,
       cabinetCode: params?.cabinetCode,
       departmentId: params?.departmentId,
+      keyword: params?.keyword?.trim() || undefined,
+      statusFilter: params?.statusFilter && params.statusFilter !== 'all' ? params.statusFilter : undefined,
     };
     const response = await api.post('/reports/cabinet-stock/pdf', body);
     const res = response.data as { success?: boolean; data?: { buffer?: string; filename?: string; contentType?: string } };
@@ -1259,8 +1275,18 @@ export const reportsApi = {
   },
 
   /** รายงานสต๊อกตู้ Weighing - Excel */
-  downloadWeighingStockExcel: async (params?: { stockId?: number; itemName?: string; itemcode?: string }): Promise<void> => {
-    const body = { stockId: params?.stockId, itemName: params?.itemName || undefined, itemcode: params?.itemcode || undefined };
+  downloadWeighingStockExcel: async (params?: {
+    stockId?: number;
+    itemName?: string;
+    itemcode?: string;
+    statusFilter?: string;
+  }): Promise<void> => {
+    const body = {
+      stockId: params?.stockId,
+      itemName: params?.itemName || undefined,
+      itemcode: params?.itemcode || undefined,
+      statusFilter: params?.statusFilter && params.statusFilter !== 'all' ? params.statusFilter : undefined,
+    };
     const response = await api.post('/reports/weighing-stock/excel', body);
     const res = response.data as { success?: boolean; data?: { buffer?: string; filename?: string; contentType?: string } };
     if (!res?.success || !res?.data?.buffer) throw new Error((res as any)?.error || 'ไม่สามารถสร้างไฟล์ได้');
@@ -1279,8 +1305,18 @@ export const reportsApi = {
   },
 
   /** รายงานสต๊อกตู้ Weighing - PDF */
-  downloadWeighingStockPdf: async (params?: { stockId?: number; itemName?: string; itemcode?: string }): Promise<void> => {
-    const body = { stockId: params?.stockId, itemName: params?.itemName || undefined, itemcode: params?.itemcode || undefined };
+  downloadWeighingStockPdf: async (params?: {
+    stockId?: number;
+    itemName?: string;
+    itemcode?: string;
+    statusFilter?: string;
+  }): Promise<void> => {
+    const body = {
+      stockId: params?.stockId,
+      itemName: params?.itemName || undefined,
+      itemcode: params?.itemcode || undefined,
+      statusFilter: params?.statusFilter && params.statusFilter !== 'all' ? params.statusFilter : undefined,
+    };
     const response = await api.post('/reports/weighing-stock/pdf', body);
     const res = response.data as { success?: boolean; data?: { buffer?: string; filename?: string; contentType?: string } };
     if (!res?.success || !res?.data?.buffer) throw new Error((res as any)?.error || 'ไม่สามารถสร้างไฟล์ได้');
@@ -1552,6 +1588,42 @@ export const departmentApi = {
 export const itemStockApi = {
   getAll: async (params?: { page?: number; limit?: number; keyword?: string; sort_by?: string; sort_order?: string }): Promise<ApiResponse<any[]>> => {
     const response = await api.get('/item-stocks', { params });
+    return response.data;
+  },
+
+  /** รายการ RFID รายชิ้นใน itemstock — GET /item-stocks/rfid-lines?itemcode=&stock_id= */
+  getRfidLines: async (
+    itemcode: string,
+    stockId: number,
+  ): Promise<{
+    success: boolean;
+    message?: string;
+    data?: { rowId: number; rfidCode: string; expireDate: string | null }[];
+  }> => {
+    const response = await api.get('/item-stocks/rfid-lines', {
+      params: { itemcode, stock_id: stockId },
+    });
+    return response.data;
+  },
+
+  /**
+   * RFID จัดกลุ่มตาม itemcode — GET /item-stocks/rfid-lines-grouped?stock_id=&keyword=
+   * data: Record<itemcode, { rowId, rfidCode, expireDate }[]>
+   */
+  getRfidLinesGroupedByStock: async (
+    stockId: number,
+    keyword?: string,
+  ): Promise<{
+    success: boolean;
+    message?: string;
+    data?: Record<string, { rowId: number; rfidCode: string; expireDate: string | null }[]>;
+  }> => {
+    const response = await api.get('/item-stocks/rfid-lines-grouped', {
+      params: {
+        stock_id: stockId,
+        keyword: keyword?.trim() || undefined,
+      },
+    });
     return response.data;
   },
 };

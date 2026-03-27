@@ -50,8 +50,8 @@ export class ItemService {
     page: number,
     limit: number,
     keyword?: string,
-    sort_by: string = 'itemcode',
-    sort_order: string = 'asc',
+    _sort_by: string = 'itemcode',
+    _sort_order: string = 'asc',
     cabinet_id?: number,
     department_id?: number,
     status?: string,
@@ -69,24 +69,6 @@ export class ItemService {
         ];
       }
 
-      // Build orderBy object - Prisma needs proper type
-      const validSortFields = [
-        'itemcode',
-        'itemname',
-        'CostPrice',
-        'SalePrice',
-        'CreateDate',
-      ];
-      const validSortOrders = ['asc', 'desc'];
-
-      const field = validSortFields.includes(sort_by) ? sort_by : 'itemcode';
-      const order = validSortOrders.includes(sort_order)
-        ? (sort_order as 'asc' | 'desc')
-        : ('desc' as 'asc' | 'desc');
-
-      const orderBy: any = {};
-      orderBy[field] = order;
-
       // Build itemStocks where clause (count_itemstock คำนวณจาก IsStock = 1 ในขั้นตอน map)
       const itemStocksWhere: any = {
         RfidCode: {
@@ -94,34 +76,14 @@ export class ItemService {
         },
       };
 
-      // Filter by cabinet_id if provided (เก็บ cabinetStockId สำหรับอ้างอิงจำนวนชุดรุดต่อตู้)
-      let cabinetStockId: number | null = null;
-      // department_codes สำหรับกรอง qty_in_use (จาก MedicalSupplyUsage.department_code)
-      let deptCodesForUsage: string[] | null = null;
-
       if (cabinet_id) {
         const cabinet = await this.prisma.cabinet.findUnique({
           where: { id: cabinet_id },
-          select: {
-            stock_id: true,
-            cabinetDepartments: {
-              where: { status: 'ACTIVE' },
-              select: { department_id: true },
-            },
-          },
+          select: { stock_id: true },
         });
         if (cabinet?.stock_id) {
-          cabinetStockId = cabinet.stock_id;
           itemStocksWhere.StockID = cabinet.stock_id;
         }
-        // รวบรวม department_code จาก cabinetDepartments ของตู้นี้
-        if (cabinet?.cabinetDepartments?.length) {
-          deptCodesForUsage = cabinet.cabinetDepartments
-            .map((cd) => String(cd.department_id))
-            .filter(Boolean);
-        }
-      } else if (department_id) {
-        deptCodesForUsage = [String(department_id)];
       }
 
       // Get all items matching the filter criteria (including keyword search)
@@ -197,105 +159,9 @@ export class ItemService {
         return true;
       });
 
-      // จำนวนอุปกรณ์ที่ถูกใช้งานในปัจจุบัน (จาก supply_usage_items: qty - qty_used_with_patient - qty_returned_to_cabinet)
-      // นับเฉพาะรายการที่ไม่เป็น Discontinue และกรองตาม department_code ของ MedicalSupplyUsage
-      const itemCodes = filteredItems.map((i: any) => i.itemcode).filter(Boolean);
-      const qtyInUseMap = new Map<string, number>();
-      if (itemCodes.length > 0) {
-        // สร้าง condition สำหรับ department_code (JOIN กับ MedicalSupplyUsage)
-        const deptCondition =
-          deptCodesForUsage && deptCodesForUsage.length > 0
-            ? Prisma.sql`AND msu.department_code IN (${Prisma.join(deptCodesForUsage.map((c) => Prisma.sql`${c}`))})`
-            : Prisma.empty;
-
-        const qtyInUseRows = await this.prisma.$queryRaw<
-          { order_item_code: string; qty_in_use: bigint }[]
-        >`SELECT
-            sui.order_item_code,
-            SUM(COALESCE(sui.qty, 0) - COALESCE(sui.qty_used_with_patient, 0) - COALESCE(sui.qty_returned_to_cabinet, 0)) AS qty_in_use
-          FROM app_microservice_supply_usage_items sui
-          INNER JOIN app_microservice_medical_supply_usages msu
-            ON sui.medical_supply_usage_id = msu.id
-          WHERE sui.order_item_code IN (${Prisma.join(itemCodes.map((c) => Prisma.sql`${c}`))})
-            AND sui.order_item_code IS NOT NULL
-            AND sui.order_item_code != ''
-            AND DATE(sui.created_at) = CURDATE()
-            AND sui.order_item_status != 'Discontinue'
-            ${deptCondition}
-          GROUP BY sui.order_item_code
-        `;
-        qtyInUseRows.forEach((row) => {
-          const val = Number(row.qty_in_use ?? 0);
-          if (val > 0) qtyInUseMap.set(row.order_item_code, val);
-        });
-      }
-
-      // จำนวนที่แจ้งชำรุด (อ้างอิงตู้/stock_id) — เฉพาะ return_reason = DAMAGED เฉพาะวันนี้ (คอลัมน์ "ชำรุด" ไม่รวมปนเปื้อน)
-      const damagedReturnMap = new Map<string, number>();
-      if (itemCodes.length > 0) {
-        if (cabinetStockId != null) {
-          const damagedRows = await this.prisma.$queryRaw<
-            { item_code: string; total_returned: bigint }[]
-          >` SELECT
-              srr.item_code,
-              SUM(COALESCE(srr.qty_returned, 0)) AS total_returned
-            FROM app_microservice_supply_item_return_records srr
-            WHERE srr.item_code IN (${Prisma.join(itemCodes.map((c) => Prisma.sql`${c}`))})
-              AND srr.item_code IS NOT NULL
-              AND srr.item_code != ''
-              AND DATE(srr.return_datetime) = CURDATE()
-              AND (srr.stock_id = ${cabinetStockId})
-            GROUP BY srr.item_code
-          `;
-
-          damagedRows.forEach((row) => {
-            const val = Number(row.total_returned ?? 0);
-            if (val > 0) damagedReturnMap.set(row.item_code, val);
-          });
-        } else {
-          const damagedRows = await this.prisma.$queryRaw<
-            { item_code: string; stock_id: number; total_returned: bigint }[]
-          >` SELECT
-              srr.item_code,
-              srr.stock_id,
-              SUM(COALESCE(srr.qty_returned, 0)) AS total_returned
-            FROM app_microservice_supply_item_return_records srr
-            WHERE srr.item_code IN (${Prisma.join(itemCodes.map((c) => Prisma.sql`${c}`))})
-              AND srr.item_code IS NOT NULL
-              AND srr.item_code != ''
-              AND DATE(srr.return_datetime) = CURDATE()
-              AND srr.stock_id IS NOT NULL
-            GROUP BY srr.item_code, srr.stock_id
-          `;
-
-          damagedRows.forEach((row) => {
-            const val = Number(row.total_returned ?? 0);
-            if (val > 0) {
-              const key = `${row.item_code}:${row.stock_id}`;
-              damagedReturnMap.set(key, val);
-            }
-          });
-        }
-      }
-
-      // Override min/max ต่อตู้: โหลด CabinetItemSetting เมื่อมี cabinet_id
-      const overrideMap = new Map<string, { stock_min?: number | null; stock_max?: number | null }>();
-      if (cabinet_id != null && itemCodes.length > 0) {
-        const overrides = await this.prisma.cabinetItemSetting.findMany({
-          where: {
-            cabinet_id,
-            item_code: { in: itemCodes },
-          },
-          select: { item_code: true, stock_min: true, stock_max: true },
-        });
-        overrides.forEach((o) => {
-          overrideMap.set(o.item_code, { stock_min: o.stock_min, stock_max: o.stock_max });
-        });
-      }
-
       const now = new Date();
-      const in7Days = new Date(now);
-      in7Days.setDate(in7Days.getDate() + 7);
+      const nearExpireLimit = new Date(now);
+      nearExpireLimit.setDate(nearExpireLimit.getDate() + 30);
 
       const itemsWithMeta = filteredItems.map((item: any) => {
         // จำกัด itemStocks ตาม department ถ้ามีระบุ
@@ -327,39 +193,21 @@ export class ItemService {
 
           if (exp < now) {
             hasExpired = true;
-          } else if (exp >= now && exp <= in7Days) {
+          } else if (exp >= now && exp <= nearExpireLimit) {
             hasNearExpire = true;
           }
         });
 
-        // ดึง min/max จาก CabinetItemSetting เท่านั้น (ไม่ใช้ Item)
-        const override = overrideMap.get(item.itemcode);
-        const effectiveStockMin = override?.stock_min ?? null;
-        const effectiveStockMax = override?.stock_max ?? 0;
+        const effectiveStockMin = item.stock_min ?? null;
+        const effectiveStockMax = item.stock_max ?? 0;
         const stockMin = effectiveStockMin ?? 0;
         const isLowStock = stockMin > 0 && countItemStock < stockMin;
 
-        // จำนวนที่แจ้งชำรุด (อ้างอิงตู้/stock_id) — กรองตู้แล้วใช้ของตู้นั้น; ไม่กรองตู้แล้วใช้ของตู้แรกเท่านั้น (ไม่ sum หลายตู้เพราะจะทำให้ค่าเพี้ยน เช่น 10 ตู้ × 6 = 60)
-        let damagedQty: number;
-        if (cabinetStockId != null) {
-          damagedQty = damagedReturnMap.get(item.itemcode) ?? 0;
-        } else {
-          const firstStock = matchingItemStocks[0];
-          damagedQty = firstStock
-            ? (damagedReturnMap.get(`${item.itemcode}:${firstStock.StockID}`) ?? 0)
-            : 0;
-        }
+        const damagedQty = 0;
+        const qtyInUse = 0;
 
-
-        const qtyInUse = qtyInUseMap.get(item.itemcode) ?? 0;
-
-        // สมาการที่ 1
-        // let refillQty = qtyInUse + damagedQty;
-
-
-        // สมาการที่ 2
-        // จำนวนที่ต้องเติม: M=Max (จาก CabinetItemSetting), A=ของที่อยู่ในตู้, B=ถูกใช้งาน, C=ชำรุด | X=M-A, Y=B+C | if X<Y then 0, if X>Y then X-Y
-        const M = effectiveStockMax ?? 0; // ใช้ effectiveStockMax จาก CabinetItemSetting (ถ้า null ใช้ 0)
+        // จำนวนที่ต้องเติม: M=Max, A=ในตู้, B=ถูกใช้งาน (0), C=ชำรุด (0) — คำนวณจาก itemstock เท่านั้น
+        const M = effectiveStockMax ?? 0;
         const A = countItemStock;
 
         const B = qtyInUse;
@@ -382,17 +230,9 @@ export class ItemService {
           // refillQty = Y;
         }
 
-        if(refillQty < 0) {
+        if (refillQty < 0) {
           refillQty = 0;
         }
-
-      
-        //สมาการ 3 
-        // let refillQty = effectiveStockMax - countItemStock;
-
-        // if (refillQty < 0) {
-        //   refillQty = 0;
-        // }
 
         const itemWithCount = {
           ...item,
@@ -421,7 +261,7 @@ export class ItemService {
             return a.hasExpired ? -1 : 1;
           }
 
-          // 2) ถัดมา stock ใกล้หมดอายุ (ภายใน 7 วัน)
+          // 2) ถัดมา stock ใกล้หมดอายุ (ภายใน 30 วัน — ตรงกับหน้า admin items-stock)
           if (a.hasNearExpire !== b.hasNearExpire) {
             return a.hasNearExpire ? -1 : 1;
           }
@@ -997,22 +837,59 @@ export class ItemService {
         where,
         _sum: { Qty: true },
         _count: { RowID: true },
+        _min: { ExpireDate: true, expDate: true },
       });
       const itemCodes = itemCountsRaw.map((x) => x.ItemCode).filter(Boolean) as string[];
       const itemsInfo =
         itemCodes.length > 0
           ? await this.prisma.item.findMany({
             where: { itemcode: { in: itemCodes } },
-            select: { itemcode: true, itemname: true },
+            select: {
+              itemcode: true,
+              itemname: true,
+              Alternatename: true,
+              Barcode: true,
+              stock_min: true,
+              stock_max: true,
+            },
           })
           : [];
-      const itemNameMap = Object.fromEntries(itemsInfo.map((i) => [i.itemcode, i.itemname ?? i.itemcode]));
-      const item_counts = itemCountsRaw.map((row) => ({
-        itemcode: row.ItemCode,
-        itemname: itemNameMap[row.ItemCode ?? ''] ?? row.ItemCode ?? '-',
-        total_qty: row._sum.Qty ?? 0,
-        count_rows: row._count.RowID,
-      }));
+      const itemInfoByCode = Object.fromEntries(
+        itemsInfo.map((i) => [i.itemcode, i]),
+      );
+      const item_counts = itemCountsRaw.map((row) => {
+        const code = row.ItemCode ?? '';
+        const info = itemInfoByCode[code];
+        const ed = row._min?.ExpireDate;
+        const ex = row._min?.expDate;
+        const tEd = ed ? new Date(ed).getTime() : null;
+        const tEx = ex ? new Date(ex).getTime() : null;
+        let nearest_expire: Date | null = null;
+        if (tEd != null && tEx != null) {
+          nearest_expire = new Date(Math.min(tEd, tEx));
+        } else if (tEd != null) {
+          nearest_expire = new Date(tEd);
+        } else if (tEx != null) {
+          nearest_expire = new Date(tEx);
+        }
+        return {
+          itemcode: row.ItemCode,
+          itemname: info?.itemname ?? (code || '-'),
+          total_qty: row._sum.Qty ?? 0,
+          count_rows: row._count.RowID,
+          nearest_expire,
+          item: info
+            ? {
+              itemcode: info.itemcode,
+              itemname: info.itemname,
+              Alternatename: info.Alternatename,
+              Barcode: info.Barcode,
+              stock_min: info.stock_min,
+              stock_max: info.stock_max,
+            }
+            : null,
+        };
+      });
 
       return {
         success: true,
@@ -1032,6 +909,99 @@ export class ItemService {
     }
   }
 
+  /**
+   * รายการ RFID รายชิ้นจาก itemstock ตามคู่ (ItemCode, StockID) — ใช้หน้าสต๊อกตู้ RFID
+   */
+  async findRfidLinesByItemAndStock(itemcode: string, stockId: number) {
+    const code = itemcode?.trim();
+    if (!code || stockId == null || stockId <= 0) {
+      return { success: false, message: 'itemcode และ stock_id ไม่ถูกต้อง', data: [] };
+    }
+    const rows = await this.prisma.itemStock.findMany({
+      where: {
+        ItemCode: code,
+        StockID: stockId,
+        IsStock: true,
+        IsCancel: false,
+      },
+      select: {
+        RowID: true,
+        RfidCode: true,
+        ExpireDate: true,
+        expDate: true,
+      },
+      orderBy: [{ RfidCode: 'asc' }, { RowID: 'asc' }],
+    });
+    const data = rows
+      .filter((r) => (r.RfidCode ?? '').trim().length > 0)
+      .map((r) => {
+        const exp = r.ExpireDate ?? r.expDate ?? null;
+        return {
+          rowId: r.RowID,
+          rfidCode: (r.RfidCode ?? '').trim(),
+          expireDate: exp,
+        };
+      });
+    return { success: true, data };
+  }
+
+  /**
+   * RFID จัดกลุ่มตาม ItemCode สำหรับตู้เดียว (StockID)
+   * คืน data เป็น Record<itemcode, { rowId, rfidCode, expireDate }[]>
+   */
+  async findRfidLinesGroupedByStock(stockId: number, keyword?: string) {
+    if (stockId == null || stockId <= 0) {
+      return { success: false, message: 'stock_id ไม่ถูกต้อง', data: {} };
+    }
+    try {
+      const where: Prisma.ItemStockWhereInput = {
+        StockID: stockId,
+        IsStock: true,
+        IsCancel: false,
+      };
+      const kw = keyword?.trim();
+      if (kw) {
+        where.item = {
+          OR: [
+            { itemcode: { contains: kw } },
+            { itemname: { contains: kw } },
+          ],
+        };
+      }
+      const rows = await this.prisma.itemStock.findMany({
+        where,
+        select: {
+          ItemCode: true,
+          RowID: true,
+          RfidCode: true,
+          ExpireDate: true,
+          expDate: true,
+        },
+        orderBy: [{ ItemCode: 'asc' }, { RfidCode: 'asc' }, { RowID: 'asc' }],
+      });
+      const map: Record<
+        string,
+        { rowId: number; rfidCode: string; expireDate: Date | null }[]
+      > = {};
+      for (const r of rows) {
+        const code = (r.ItemCode ?? '').trim();
+        const tag = (r.RfidCode ?? '').trim();
+        if (!code || !tag) continue;
+        const exp = r.ExpireDate ?? r.expDate ?? null;
+        const line = { rowId: r.RowID, rfidCode: tag, expireDate: exp };
+        if (!map[code]) map[code] = [];
+        map[code].push(line);
+      }
+      return { success: true, data: map };
+    } catch (error: any) {
+      return {
+        success: false,
+        message: 'Failed to fetch RFID lines by stock',
+        error: error.message,
+        data: {},
+      };
+    }
+  }
 
   // ====================================== Item Stock Return API ======================================
   /**

@@ -125,7 +125,7 @@ export function DashboardExpiryTables({
   expiredStockList,
   nearExpireStockList,
 }: DashboardExpiryTablesProps) {
-  const stockHref = '/admin/weighing-stock';
+  const stockHref = '/admin/items-stock';
 
   return (
     <div className="flex flex-col gap-6">
@@ -137,17 +137,17 @@ export function DashboardExpiryTables({
         showStatus={false}
         rows={expiredStockList}
         loading={loading}
-        emptyMessage="ไม่มีรายการหมดอายุ"
+        emptyMessage="ไม่มีรายการหมดอายุในตู้ RFID"
         stockHref={stockHref}
       />
       <ExpiryPanel
-        title="ใกล้หมดอายุ (ภายใน 30 วัน)"
+        title="ใกล้หมดอายุ — ตู้ RFID (ภายใน 30 วัน)"
         titleIcon={CalendarClock}
         iconClassName="h-5 w-5 text-amber-600"
         variant="near"
         rows={nearExpireStockList}
         loading={loading}
-        emptyMessage="ไม่มีรายการใกล้หมดอายุ"
+        emptyMessage="ไม่มีรายการใกล้หมดอายุในตู้ RFID"
         stockHref={stockHref}
       />
     </div>

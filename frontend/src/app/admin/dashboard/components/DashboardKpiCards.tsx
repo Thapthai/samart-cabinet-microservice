@@ -16,7 +16,7 @@ export function DashboardKpiCards({ loading, itemStockAlerts }: DashboardKpiCard
       >
         <div className="flex items-start justify-between gap-3">
           <div>
-            <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">อุปกรณ์หมดอายุ</p>
+            <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">อุปกรณ์หมดอายุ (ตู้ RFID)</p>
             {loading ? (
               <Loader2 className="mt-3 h-8 w-8 animate-spin text-sky-500" />
             ) : (
@@ -24,7 +24,7 @@ export function DashboardKpiCards({ loading, itemStockAlerts }: DashboardKpiCard
                 {itemStockAlerts.expiredStockCount.toLocaleString()}
               </p>
             )}
-            <p className="mt-1 text-xs text-slate-500">จำนวนชิ้นในสต็อกที่หมดอายุแล้ว</p>
+            <p className="mt-1 text-xs text-slate-500">ชิ้นในสต็อกตู้ RFID ที่หมดอายุแล้ว</p>
           </div>
           <div className="rounded-xl bg-red-100 p-3 text-red-600 transition group-hover:bg-red-200/80">
             <CalendarX className="h-6 w-6" />
@@ -46,7 +46,7 @@ export function DashboardKpiCards({ loading, itemStockAlerts }: DashboardKpiCard
                 {itemStockAlerts.nearExpireStockCount.toLocaleString()}
               </p>
             )}
-            <p className="mt-1 text-xs text-slate-500">ชิ้นในสต็อกที่หมดอายุภายใน 30 วัน (ยังไม่หมดอายุ)</p>
+            <p className="mt-1 text-xs text-slate-500">ชิ้นในสต็อกตู้ RFID ที่จะหมดอายุภายใน 30 วัน (ยังไม่หมดอายุ)</p>
           </div>
           <div className="rounded-xl bg-amber-100 p-3 text-amber-700 transition group-hover:bg-amber-200/80">
             <CalendarClock className="h-6 w-6" />

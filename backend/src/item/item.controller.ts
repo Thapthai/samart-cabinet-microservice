@@ -189,4 +189,33 @@ export class ItemStockController {
   async findAllWillReturn() {
     return this.itemService.findAllItemStockWillReturn();
   }
+
+  /**
+   * RFID จัดกลุ่มตาม itemcode สำหรับตู้ (stock_id)
+   * Response: { success, data: { [itemcode]: [{ rowId, rfidCode, expireDate }] } }
+   */
+  @Get('rfid-lines-grouped')
+  async findRfidLinesGrouped(
+    @Query('stock_id') stock_id?: string,
+    @Query('keyword') keyword?: string,
+  ) {
+    const stockId = stock_id ? parseInt(stock_id, 10) : NaN;
+    if (stock_id == null || stock_id === '' || Number.isNaN(stockId) || stockId <= 0) {
+      return { success: false, message: 'ต้องระบุ stock_id', data: {} };
+    }
+    return this.itemService.findRfidLinesGroupedByStock(stockId, keyword);
+  }
+
+  /** รายการ RFID ใน itemstock ต่อรหัสสินค้า + StockID (ตู้) */
+  @Get('rfid-lines')
+  async findRfidLines(
+    @Query('itemcode') itemcode?: string,
+    @Query('stock_id') stock_id?: string,
+  ) {
+    const stockId = stock_id ? parseInt(stock_id, 10) : NaN;
+    if (itemcode == null || itemcode.trim() === '' || stock_id == null || stock_id === '' || Number.isNaN(stockId) || stockId <= 0) {
+      return { success: false, message: 'ต้องระบุ itemcode และ stock_id', data: [] };
+    }
+    return this.itemService.findRfidLinesByItemAndStock(itemcode, stockId);
+  }
 }

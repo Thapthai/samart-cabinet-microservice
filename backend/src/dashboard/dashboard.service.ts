@@ -18,6 +18,33 @@ const itemStockInCabinetWhere = {
   RfidCode: { not: '' },
 } as const;
 
+/**
+ * ตู้ประเภท RFID เท่านั้น — สอดคล้อง cabinetStockTableMode ฝั่งแอดมิน (ไม่นับ Weighing)
+ * MySQL: ใช้รหัสตัวพิมพ์ใหญ่ตาม master (RFID / WEIGHING)
+ */
+/** mutable เพื่อให้ตรงกับ Prisma ItemStockWhereInput */
+const itemStockCabinetIsRfidWhere = {
+  cabinet: {
+    is: {
+      OR: [
+        { cabinet_type: 'RFID' },
+        {
+          cabinetTypeDef: {
+            is: {
+              OR: [
+                { code: 'RFID' },
+                {
+                  AND: [{ show_rfid_code: true }, { NOT: { code: 'WEIGHING' } }],
+                },
+              ],
+            },
+          },
+        },
+      ],
+    },
+  },
+};
+
 @Injectable()
 export class DashboardService {
   constructor(
@@ -44,7 +71,7 @@ export class DashboardService {
   }
 
   /**
-   * หมดอายุ / ใกล้หมดอายุ 30 วัน — นับจาก itemstock.ExpireDate โดยตรง
+   * หมดอายุ / ใกล้หมดอายุ 30 วัน — นับจาก itemstock.ExpireDate เฉพาะตู้ RFID
    * สต็อกต่ำกว่า min — เทียบ min จาก cabinet_item_settings กับผลรวม itemslotincabinet.Qty ต่อ (StockID, itemcode)
    */
   /** นับ KPI + รายการตู้–รายการที่ต่ำกว่า min (จำกัดจำนวนแถว) */
@@ -57,12 +84,14 @@ export class DashboardService {
       this.prisma.itemStock.count({
         where: {
           ...itemStockInCabinetWhere,
+          ...itemStockCabinetIsRfidWhere,
           ExpireDate: { not: null, lt: now },
         },
       }),
       this.prisma.itemStock.count({
         where: {
           ...itemStockInCabinetWhere,
+          ...itemStockCabinetIsRfidWhere,
           ExpireDate: { not: null, gte: now, lte: in30 },
         },
       }),
@@ -187,6 +216,7 @@ export class DashboardService {
       this.prisma.itemStock.findMany({
         where: {
           ...itemStockInCabinetWhere,
+          ...itemStockCabinetIsRfidWhere,
           ExpireDate: { not: null, lt: now },
         },
         select,
@@ -196,6 +226,7 @@ export class DashboardService {
       this.prisma.itemStock.findMany({
         where: {
           ...itemStockInCabinetWhere,
+          ...itemStockCabinetIsRfidWhere,
           ExpireDate: { not: null, gte: now, lte: in30 },
         },
         select,

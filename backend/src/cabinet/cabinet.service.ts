@@ -139,7 +139,12 @@ export class CabinetService {
         where: { id: cabinet.id },
         include: {
           cabinetDepartments: {
-            select: { id: true, department_id: true, status: true },
+            select: {
+              id: true,
+              department_id: true,
+              status: true,
+              department: { select: { ID: true, DepName: true, DepName2: true } },
+            },
           },
           cabinetTypeDef: this.cabinetTypeInclude(),
         },
@@ -178,7 +183,12 @@ export class CabinetService {
         take: limit,
         include: {
           cabinetDepartments: {
-            select: { id: true, department_id: true, status: true },
+            select: {
+              id: true,
+              department_id: true,
+              status: true,
+              department: { select: { ID: true, DepName: true, DepName2: true } },
+            },
           },
           cabinetTypeDef: this.cabinetTypeInclude(),
         },
@@ -214,7 +224,12 @@ export class CabinetService {
         data: patch,
         include: {
           cabinetDepartments: {
-            select: { id: true, department_id: true, status: true },
+            select: {
+              id: true,
+              department_id: true,
+              status: true,
+              department: { select: { ID: true, DepName: true, DepName2: true } },
+            },
           },
           cabinetTypeDef: this.cabinetTypeInclude(),
         },

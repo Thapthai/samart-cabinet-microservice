@@ -392,6 +392,8 @@ export class ReportServiceController {
     cabinetId?: number;
     cabinetCode?: string;
     departmentId?: number;
+    keyword?: string;
+    statusFilter?: string;
   }) {
     try {
       const result = await this.reportServiceService.generateCabinetStockExcel(data);
@@ -406,6 +408,8 @@ export class ReportServiceController {
     cabinetId?: number;
     cabinetCode?: string;
     departmentId?: number;
+    keyword?: string;
+    statusFilter?: string;
   }) {
     try {
       const result = await this.reportServiceService.generateCabinetStockPdf(data);
@@ -420,6 +424,8 @@ export class ReportServiceController {
     cabinetId?: number;
     cabinetCode?: string;
     departmentId?: number;
+    keyword?: string;
+    statusFilter?: string;
   }) {
     try {
       const result = await this.reportServiceService.getCabinetStockData(data);
@@ -480,7 +486,12 @@ export class ReportServiceController {
   }
 
   @Post('weighing-stock/pdf')
-  async generateWeighingStockPdf(@Body() data: { stockId?: number; itemName?: string; itemcode?: string }) {
+  async generateWeighingStockPdf(@Body() data: {
+    stockId?: number;
+    itemName?: string;
+    itemcode?: string;
+    statusFilter?: string;
+  }) {
     try {
       const result = await this.reportServiceService.generateWeighingStockPdf(data);
       return toFileResponse(result.buffer, result.filename, PDF_CONTENT);

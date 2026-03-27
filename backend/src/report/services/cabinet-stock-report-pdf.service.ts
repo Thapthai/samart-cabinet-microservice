@@ -4,6 +4,37 @@ import * as fs from 'fs';
 import { CabinetStockReportData } from './cabinet-stock-report-excel.service';
 import { resolveReportLogoPath, getReportThaiFontPaths } from '../config/report.config';
 
+const PALETTE = {
+  ink: '#0F172A',
+  muted: '#64748B',
+  line: '#E2E8F0',
+  lineStrong: '#CBD5E1',
+  headerBg: '#1E3A5F',
+  card: '#F8FAFC',
+  /** พื้นสรุปใต้วันที่ — เทาชัดพอเห็นบนจอและพิมพ์ */
+  summaryBandFill: '#D8DEE6',
+  summaryBandStroke: '#9CA3AF',
+  accent: '#2563EB',
+  footer: '#94A3B8',
+};
+
+function pdfRowBgForStatus(status: string, zebraLight: boolean): string {
+  const s = (status || '').toUpperCase();
+  if (s === 'EXPIRED') return '#FECACA';
+  if (s === 'LOW') return '#FFEDD5';
+  if (s === 'SOON') return '#FEF08A';
+  return zebraLight ? '#F8FAFC' : '#FFFFFF';
+}
+
+function statusTextColor(status: string): string {
+  const s = (status || '').toUpperCase();
+  if (s === 'EXPIRED') return '#B91C1C';
+  if (s === 'LOW') return '#C2410C';
+  if (s === 'SOON') return '#B45309';
+  if (s === 'OK') return '#15803D';
+  return PALETTE.ink;
+}
+
 @Injectable()
 export class CabinetStockReportPdfService {
   private async registerThaiFont(doc: PDFKit.PDFDocument): Promise<boolean> {
@@ -31,8 +62,8 @@ export class CabinetStockReportPdfService {
   async generateReport(data: CabinetStockReportData): Promise<Buffer> {
     const doc = new PDFDocument({
       size: 'A4',
-      layout: 'portrait',
-      margin: 10,
+      layout: 'landscape',
+      margin: 48,
       bufferPages: true,
     });
 
@@ -46,9 +77,8 @@ export class CabinetStockReportPdfService {
       if (hasThai) {
         finalFontName = 'ThaiFont';
         finalFontBoldName = 'ThaiFontBold';
-        // prime ฟอนต์บน page แรก เพื่อให้ PDFKit embed font ใน resource ของ page 1
-        doc.font(finalFontBoldName).fontSize(13);
-        doc.font(finalFontName).fontSize(13);
+        doc.font(finalFontBoldName).fontSize(17);
+        doc.font(finalFontName).fontSize(17);
       }
     } catch {
       // keep default
@@ -67,205 +97,227 @@ export class CabinetStockReportPdfService {
       doc.on('error', reject);
 
       try {
-        const margin = 10;
+        const margin = 48;
+        /** ขนาดตัวอักษรหลัก = 17pt (ตาราง + กล่องสรุป) */
+        const F = {
+          title: 26,
+          titleEn: 14,
+          date: 13,
+          summary: 17,
+          table: 17,
+          footer: 12,
+          pageNum: 11,
+        } as const;
         const pageWidth = doc.page.width;
         const pageHeight = doc.page.height;
         const contentWidth = pageWidth - margin * 2;
-        const summary = data?.summary ?? { total_rows: 0, total_qty: 0, total_refill_qty: 0 };
+        const summary = data?.summary ?? { total_rows: 0, total_qty: 0 };
         const rows = data?.data && Array.isArray(data.data) ? data.data : [];
+        const filters = data.filters ?? {};
+        const totalRows = Number(summary.total_rows ?? 0);
+        const totalQty = Number(summary.total_qty ?? 0);
+        const cabinetLabel = (filters.cabinetName || filters.cabinetCode || '').trim();
+        const scopeLine = cabinetLabel
+          ? `ตู้: ${cabinetLabel}`
+          : filters.departmentName
+            ? `แผนก: ${filters.departmentName}`
+            : '';
+        const descLine = `ทั้งหมด ${totalRows} รายการจากระบบ · รวม ${totalQty} ชิ้น (IsStock=1) · รายงาน: สต็อกในตู้ (Cabinet / RFID)`;
+        const subtitleBlock = scopeLine ? `${scopeLine}\n${descLine}` : descLine;
 
-        // ---- Header block with logo ----
-        const headerTop = 35;
-        const headerHeight = 48;
-        doc.rect(margin, headerTop, contentWidth, headerHeight)
-          .fillAndStroke('#F8F9FA', '#DEE2E6');
+        const headerTop = 40;
+        const headerHeight = 58;
+        doc.rect(margin, headerTop, contentWidth, headerHeight).fillAndStroke(PALETTE.card, PALETTE.lineStrong);
+        doc.save();
+        doc.strokeColor(PALETTE.accent).lineWidth(3);
+        doc.moveTo(margin, headerTop + headerHeight).lineTo(margin + contentWidth, headerTop + headerHeight).stroke();
+        doc.restore();
 
         if (logoBuffer && logoBuffer.length > 0) {
           try {
-            doc.image(logoBuffer, margin + 8, headerTop + 6, { fit: [70, 36] });
+            doc.image(logoBuffer, margin + 10, headerTop + 8, { fit: [72, 38] });
           } catch {
             try {
-              doc.image(logoBuffer, margin + 8, headerTop + 6, { width: 70 });
+              doc.image(logoBuffer, margin + 10, headerTop + 8, { width: 72 });
             } catch {
               // skip logo
             }
           }
         }
 
-        doc.fontSize(16).font(finalFontBoldName).fillColor('#1A365D');
-        doc.text('รายงานสต็อกอุปกรณ์ในตู้', margin, headerTop + 6, {
+        doc.fontSize(20).font(finalFontBoldName).fillColor(PALETTE.headerBg);
+        doc.text('รายการในตู้ (RFID)', margin, headerTop + 8, {
           width: contentWidth,
           align: 'center',
         });
-        doc.fontSize(11).font(finalFontName).fillColor('#6C757D');
-        doc.text('Cabinet Stock Report', margin, headerTop + 22, {
+        doc.fontSize(12).font(finalFontName).fillColor(PALETTE.muted);
+        doc.text('Cabinet / RFID', margin, headerTop + 34, {
           width: contentWidth,
           align: 'center',
         });
-        doc.fillColor('#000000');
-        doc.y = headerTop + headerHeight + 14;
+        doc.fillColor(PALETTE.ink);
+        doc.y = headerTop + headerHeight + 16;
 
-        // วันที่รายงาน
-        doc.fontSize(11).font(finalFontName).fillColor('#6C757D');
+        doc.fontSize(11).font(finalFontName).fillColor(PALETTE.muted);
         doc.text(`วันที่รายงาน: ${reportDate}`, margin, doc.y, {
           width: contentWidth,
           align: 'right',
         });
-        doc.fillColor('#000000');
-        doc.y += 6;
+        doc.fillColor(PALETTE.ink);
+        doc.y += 8;
 
-        // ---- ตาราง Filter Summary (1 แถว) ----
-        const filters = data.filters ?? {};
-        const filterRowHeight = 34;
-        const filterY = doc.y;
-        const filterCells = [
-          { label: 'ตู้ Cabinet', value: filters.cabinetName ?? filters.cabinetCode ?? 'ทั้งหมด' },
-          { label: 'แผนก', value: filters.departmentName ?? (filters.departmentId != null ? `แผนก ${filters.departmentId}` : 'ทั้งหมด') },
-          { label: 'จำนวนรายการ', value: `${data.summary?.total_rows ?? 0} รายการ` },
-        ];
-        const filterColWidth = Math.floor(contentWidth / filterCells.length);
-        let fx = margin;
-        filterCells.forEach((fc, i) => {
-          const cw = i === filterCells.length - 1
-            ? contentWidth - filterColWidth * (filterCells.length - 1)
-            : filterColWidth;
-          doc.rect(fx, filterY, cw, filterRowHeight).fillAndStroke('#E8EDF2', '#DEE2E6');
-          doc.fontSize(11).font(finalFontBoldName).fillColor('#444444');
-          doc.text(fc.label, fx + 3, filterY + 4, { width: cw - 6, align: 'center' });
-          doc.fontSize(13).font(finalFontName).fillColor('#1A365D');
-          doc.text(fc.value, fx + 3, filterY + 16, { width: cw - 6, align: 'center' });
-          fx += cw;
+        const subY = doc.y;
+        const subPadX = 14;
+        const subPadY = 6;
+        doc.fontSize(F.summary).font(finalFontName).fillColor(PALETTE.ink);
+        const textBlockH = doc.heightOfString(subtitleBlock, {
+          width: contentWidth - subPadX * 2,
+          lineGap: 2,
         });
-        doc.fillColor('#000000');
-        doc.y = filterY + filterRowHeight + 8;
+        const subH = Math.max(38, textBlockH + subPadY * 2);
+        doc.save();
+        doc.fillColor(PALETTE.summaryBandFill);
+        doc.strokeColor(PALETTE.summaryBandStroke);
+        doc.lineWidth(1);
+        doc.roundedRect(margin, subY, contentWidth, subH, 4);
+        doc.fill();
+        doc.stroke();
+        doc.restore();
+        doc.fontSize(F.summary).font(finalFontName).fillColor(PALETTE.ink);
+        doc.text(subtitleBlock, margin + subPadX, subY + subPadY, {
+          width: contentWidth - subPadX * 2,
+          align: 'left',
+          lineGap: 2,
+        });
+        doc.fillColor(PALETTE.ink);
+        doc.y = subY + subH + 12;
 
-        const itemHeight = 28;
-        const cellPadding = 4;
+        const itemHeight = 40;
+        const cellPadding = 8;
         const totalTableWidth = contentWidth;
-        // 5 คอลัมน์ตัวเลข (index 4-8) กว้างเท่ากัน, รหัส+อุปกรณ์กว้างขึ้น
-        // ลำดับ:0.04 แผนก:0.09 รหัส:0.11 อุปกรณ์:0.21 | 5x0.11
-        // ลำดับ, แผนก, รหัสอุปกรณ์(เหลือ), อุปกรณ์, จำนวนในตู้, ถูกใช้งาน, ไม่ถูกใช้งาน, Min/Max, จำนวนที่ต้องเติม
- 
-        const colPct = [0.06, 0.09, 0.17, 0.18, 0.10, 0.09, 0.09, 0.09, 0.12];
+        const colPct = [0.22, 0.085, 0.085, 0.1, 0.085, 0.425];
         const colWidths = colPct.map((p) => Math.floor(totalTableWidth * p));
         let sumW = colWidths.reduce((a, b) => a + b, 0);
-        if (sumW < totalTableWidth) colWidths[3] += totalTableWidth - sumW;
-        const headers = ['ลำดับ', 'แผนก', 'รหัสอุปกรณ์', 'อุปกรณ์', 'จำนวนในตู้', 'ถูกใช้งาน', 'ไม่ถูกใช้งาน', 'Min / Max', 'จำนวนที่ต้องเติม'];
+        if (sumW < totalTableWidth) colWidths[5]! += totalTableWidth - sumW;
+        const headers = ['ชื่ออุปกรณ์', 'วันหมดอายุ', 'จำนวนคงเหลือ', 'Min / Max', 'สถานะ', 'รายละเอียด RFID'];
 
         const drawTableHeader = (y: number) => {
           let x = margin;
-          doc.fontSize(13).font(finalFontBoldName);
-          // พื้นหลังทั้งแถว
-          doc.rect(margin, y, totalTableWidth, itemHeight).fill('#1A365D');
-          doc.fillColor('#FFFFFF');
+          doc.save();
+          doc.roundedRect(margin, y, totalTableWidth, itemHeight, 3).fill(PALETTE.headerBg);
+          doc.restore();
+          doc.fontSize(11).font(finalFontBoldName).fillColor('#F8FAFC');
           headers.forEach((h, i) => {
-            doc.text(h, x + cellPadding, y + 8, {
-              width: Math.max(2, colWidths[i] - cellPadding * 2),
+            doc.text(h, x + cellPadding, y + 9, {
+              width: Math.max(2, colWidths[i]! - cellPadding * 2),
               align: 'center',
+              lineGap: 1,
             });
-            // เส้นกั้นแนวตั้งระหว่างคอลัมน์ (ยกเว้นคอลัมน์สุดท้าย)
             if (i < headers.length - 1) {
               doc.save();
-              doc.strokeColor('#4A6FA0').lineWidth(0.5);
-              doc.moveTo(x + colWidths[i], y + 4).lineTo(x + colWidths[i], y + itemHeight - 4).stroke();
-              doc.restore();
+              doc.strokeColor('#3D5A80').opacity(0.6).lineWidth(0.35);
+              doc.moveTo(x + colWidths[i]!, y + 6).lineTo(x + colWidths[i]!, y + itemHeight - 6).stroke();
+              doc.opacity(1).restore();
             }
-            x += colWidths[i];
+            x += colWidths[i]!;
           });
-          doc.fillColor('#000000');
+          doc.fillColor(PALETTE.ink);
         };
 
         const tableHeaderY = doc.y;
         drawTableHeader(tableHeaderY);
-        doc.y = tableHeaderY + itemHeight;
+        doc.y = tableHeaderY + itemHeight + 1;
 
-        doc.fontSize(13).font(finalFontName).fillColor('#000000');
+        doc.fontSize(F.table).font(finalFontName).fillColor(PALETTE.ink);
         if (rows.length === 0) {
           const rowY = doc.y;
-          doc.rect(margin, rowY, totalTableWidth, itemHeight).fillAndStroke('#F8F9FA', '#DEE2E6');
-          doc.text('ไม่มีข้อมูล', margin + cellPadding, rowY + 7, {
+          doc.roundedRect(margin, rowY, totalTableWidth, itemHeight, 2).fillAndStroke('#F8FAFC', PALETTE.line);
+          doc.text('ไม่มีข้อมูล', margin + cellPadding, rowY + 10, {
             width: totalTableWidth - cellPadding * 2,
             align: 'center',
           });
           doc.y = rowY + itemHeight;
         } else {
           for (let idx = 0; idx < rows.length; idx++) {
-            const row = rows[idx];
-            const seq = row.seq ?? idx + 1;
-            const dept = (row as { department_name?: string }).department_name ?? '-';
-            const code = (row as { item_code?: string }).item_code ?? '-';
-            const name = (row as { item_name?: string }).item_name ?? '-';
-            const bal = (row as { balance_qty?: number }).balance_qty ?? 0;
-            const qtyInUse = (row as { qty_in_use?: number }).qty_in_use ?? 0;
-            const damagedQty = (row as { damaged_qty?: number }).damaged_qty ?? 0;
-            const smax = (row as { stock_max?: number | null }).stock_max;
-            const smin = (row as { stock_min?: number | null }).stock_min;
-            const refill = (row as { refill_qty?: number }).refill_qty ?? 0;
-            const minMaxStr =
-              smin != null && smax != null
-                ? `${smin} / ${smax}`
-                : smin != null
-                  ? `${smin} / -`
-                  : smax != null
-                    ? `- / ${smax}`
-                    : '-';
+            const row = rows[idx]!;
+            const bal = Number(row.balance_qty ?? 0);
             const cellTexts = [
-              String(seq),
-              String(dept),
-              String(code),
-              String(name),
-              String(bal),
-              String(qtyInUse),
-              String(damagedQty),
-              minMaxStr,
-              String(refill),
+              String(row.device_name ?? '—'),
+              String(row.expire_date_ymd ?? '—'),
+              bal.toLocaleString('th-TH'),
+              String(row.min_max_display ?? '—'),
+              String(row.status_label ?? '—'),
+              String(row.rfid_detail ?? '—'),
             ];
 
-            // คำนวณความสูงแถวตามข้อความที่อาจขึ้นบรรทัดใหม่
-            doc.fontSize(13).font(finalFontName);
+            doc.fontSize(F.table).font(finalFontName);
             const cellHeights = cellTexts.map((text, i) => {
-              const w = Math.max(4, colWidths[i] - cellPadding * 2);
-              return doc.heightOfString(text ?? '-', { width: w });
+              const w = Math.max(4, colWidths[i]! - cellPadding * 2);
+              return doc.heightOfString(text || '—', { width: w, lineGap: 2 });
             });
-            const rowHeight = Math.max(itemHeight, Math.max(...cellHeights) + cellPadding * 2);
+            const rowHeight = Math.max(itemHeight - 2, Math.max(...cellHeights) + cellPadding * 2);
 
-            if (doc.y + rowHeight > pageHeight - 35) {
-              doc.addPage({ size: 'A4', layout: 'portrait', margin: 10 });
+            const bottomSafe = 60;
+            if (doc.y + rowHeight > pageHeight - bottomSafe) {
+              doc.addPage({ size: 'A4', layout: 'landscape', margin: 48 });
               doc.y = margin;
               const newHeaderY = doc.y;
               drawTableHeader(newHeaderY);
-              doc.y = newHeaderY + itemHeight;
-              // reset font กลับเป็น regular หลัง drawTableHeader
-              doc.fontSize(13).font(finalFontName).fillColor('#000000');
+              doc.y = newHeaderY + itemHeight + 1;
+              doc.fontSize(F.table).font(finalFontName).fillColor(PALETTE.ink);
             }
 
             const rowY = doc.y;
-            const hasRefill = ((row as { refill_qty?: number }).refill_qty ?? 0) > 0;
-            const bg = hasRefill ? '#F8D7D7' : (idx % 2 === 0 ? '#FFFFFF' : '#F8F9FA');
+            const bg = pdfRowBgForStatus(row.status_label ?? '', idx % 2 === 1);
             let xPos = margin;
-            for (let i = 0; i < 9; i++) {
-              const cw = colWidths[i];
+            const colCount = Math.min(headers.length, colWidths.length, cellTexts.length);
+            const aligns: ('left' | 'center' | 'right')[] = ['left', 'center', 'right', 'center', 'center', 'left'];
+            for (let i = 0; i < colCount; i++) {
+              const cw = colWidths[i]!;
               const w = Math.max(4, cw - cellPadding * 2);
-              doc.rect(xPos, rowY, cw, rowHeight).fillAndStroke(bg, '#DEE2E6');
-              doc.fontSize(13).font(finalFontName).fillColor('#000000');
-              doc.text(cellTexts[i] ?? '-', xPos + cellPadding, rowY + cellPadding, {
+              doc.rect(xPos, rowY, cw, rowHeight).fillAndStroke(bg, PALETTE.line);
+              const isStatus = i === 4;
+              doc.fontSize(F.table).font(isStatus ? finalFontBoldName : finalFontName);
+              doc.fillColor(isStatus ? statusTextColor(row.status_label ?? '') : PALETTE.ink);
+              doc.text(cellTexts[i] ?? '—', xPos + cellPadding, rowY + cellPadding, {
                 width: w,
-                align: i === 1 || i === 2 || i === 3 ? 'left' : 'center',
+                align: aligns[i] ?? 'center',
+                lineGap: 2,
               });
               xPos += cw;
             }
+            doc.fillColor(PALETTE.ink);
+            doc.font(finalFontName);
             doc.y = rowY + rowHeight;
           }
         }
 
-        // หมายเหตุ: คงเหลือ = จำนวนชิ้นในตู้ (IsStock=1)
-        doc.fontSize(11).font(finalFontName).fillColor('#6C757D');
-        doc.text('หมายเหตุ: คงเหลือ = จำนวนชิ้นในตู้ (IsStock=1, อยู่ในตู้) เท่านั้น', margin, doc.y + 6, {
-          width: contentWidth,
-          align: 'center',
-        });
-        doc.fillColor('#000000');
+        doc.moveTo(margin, doc.y + 8).lineTo(margin + contentWidth, doc.y + 8).strokeColor(PALETTE.line).lineWidth(0.5).stroke();
+        doc.y += 14;
 
+        doc.fontSize(F.footer).font(finalFontName).fillColor(PALETTE.footer);
+        doc.text(
+          'หมายเหตุ: จำนวนคงเหลือ = RFID ที่ IsStock=1 · Min/Max จากรายการอุปกรณ์ · สอดคล้องหน้ารายการในตู้ (RFID)',
+          margin,
+          doc.y,
+          {
+            width: contentWidth,
+            align: 'center',
+            lineGap: 1,
+          },
+        );
+
+        const range = doc.bufferedPageRange();
+        for (let p = 0; p < range.count; p++) {
+          doc.switchToPage(range.start + p);
+          doc.fontSize(9).font(finalFontName).fillColor(PALETTE.footer);
+          doc.text(`หน้า ${p + 1} / ${range.count}`, margin, pageHeight - 36, {
+            width: contentWidth,
+            align: 'center',
+          });
+        }
+
+        doc.fillColor(PALETTE.ink);
         doc.end();
       } catch (err) {
         reject(err);

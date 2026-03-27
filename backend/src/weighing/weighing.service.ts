@@ -97,12 +97,47 @@ export class WeighingService {
       );
     }
 
+    const pairExpire = new Map<string, { itemcode: string; stockId: number }>();
+    for (const row of items) {
+      if (row.StockID == null || row.StockID <= 0 || !row.itemcode) continue;
+      const pk = `${row.itemcode}\0${row.StockID}`;
+      if (!pairExpire.has(pk)) {
+        pairExpire.set(pk, { itemcode: row.itemcode, stockId: row.StockID });
+      }
+    }
+    const expireMinByPair = new Map<string, Date>();
+    if (pairExpire.size > 0) {
+      const pairs = [...pairExpire.values()];
+      const stockLines = await this.prisma.itemStock.findMany({
+        where: {
+          OR: pairs.map((p) => ({ ItemCode: p.itemcode, StockID: p.stockId })),
+          IsStock: true,
+          IsCancel: false,
+          ExpireDate: { not: null },
+        },
+        select: { ItemCode: true, StockID: true, ExpireDate: true },
+      });
+      for (const s of stockLines) {
+        if (!s.ItemCode || s.StockID == null || !s.ExpireDate) continue;
+        const k = `${s.ItemCode}\0${s.StockID}`;
+        const prev = expireMinByPair.get(k);
+        const t = s.ExpireDate.getTime();
+        if (prev == null || t < prev.getTime()) expireMinByPair.set(k, s.ExpireDate);
+      }
+    }
+
     const data = items.map((row) => {
       const cid = row.cabinet?.id;
       const key = cid != null ? JSON.stringify([cid, row.itemcode]) : null;
       const st = key ? settingMap.get(key) : undefined;
+      const ek =
+        row.itemcode && row.StockID != null && row.StockID > 0
+          ? `${row.itemcode}\0${row.StockID}`
+          : null;
+      const nearestExpireDate = ek ? expireMinByPair.get(ek) ?? null : null;
       return {
         ...row,
+        nearestExpireDate,
         cabinetItemSetting:
           st != null
             ? { stock_min: st.stock_min, stock_max: st.stock_max }

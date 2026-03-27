@@ -229,6 +229,10 @@ export interface GetItemsQuery {
   page?: number;
   limit?: number;
   keyword?: string;
+  /** กรอง itemStocks ตาม stock_id ของตู้ — ใช้หน้าสต๊อก RFID */
+  cabinet_id?: number;
+  department_id?: number;
+  status?: string;
   item_status?: number;
   itemtypeID?: number;
   warehouseID?: number;
