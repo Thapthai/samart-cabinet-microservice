@@ -46,9 +46,9 @@ export default function EditCabinetTypeDialog({
       setNameEn(row.name_en || '');
       setDescription(row.description || '');
       setSortOrder(String(row.sort_order ?? 0));
-      setHasExpiry(row.has_expiry);
-      setShowRfid(row.show_rfid_code);
-      setIsActive(row.is_active);
+      setHasExpiry(row.has_expiry ?? true);
+      setShowRfid(row.show_rfid_code ?? false);
+      setIsActive(row.is_active ?? true);
     }
   }, [open, row]);
 

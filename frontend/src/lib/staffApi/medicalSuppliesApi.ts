@@ -133,7 +133,7 @@ export const staffMedicalSuppliesApi = {
         items: Array<{ item_stock_id: number; return_reason: string; return_note?: string }>;
         return_by_user_id?: string;
         stock_id?: number;
-    }): Promise<ApiResponse<any>> => {
+    }): Promise<ApiResponse<unknown>> => {
         const response = await staffApi.post('/medical-supply-items/record-stock-return', data);
         return response.data;
     },
@@ -149,7 +149,14 @@ export const staffMedicalSuppliesApi = {
         status?: string;
         startDate?: string;
         endDate?: string;
-    }): Promise<{ success: boolean; data: any[]; total: number; page: number; limit: number; totalPages: number }> => {
+    }): Promise<{
+        success: boolean;
+        data: unknown[];
+        total: number;
+        page: number;
+        limit: number;
+        totalPages: number;
+    }> => {
         const response = await staffApi.get('/medical-supplies/logs', { params: query });
         return response.data;
     },
